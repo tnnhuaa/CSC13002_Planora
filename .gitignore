@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 /node_modules
-src/front-end
+src/front-end/node_modules
 src/back-end/node_modules
 dist
 dist-ssr
