@@ -1,7 +1,30 @@
-export default function App() {
+// src/App.jsx
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+// Import trang
+import SignIn from "./pages/signin";
+import SignUp from "./pages/SignUp";
+import Dashboard from "./pages/Dashboard";
+
+function App() {
     return (
-        <>
-            <h2 className="text-2xl">Hello</h2>
-        </>
+        <BrowserRouter>
+            <Routes>
+                {/* Default: SignIn page */}
+                <Route path="/" element={<Navigate to="/signin" replace />} />
+
+                {/* Public pages */}
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+
+                {/* Pages */}
+                <Route path="/dashboard" element={<Dashboard />} />
+
+                {/* Error 404 */}
+                <Route path="*" element={<div>404 Not Found</div>} />
+            </Routes>
+        </BrowserRouter>
     );
 }
+
+export default App;
