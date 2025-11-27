@@ -113,12 +113,12 @@ const SignIn = () => {
                     )}
 
                     <div className="flex justify-end">
-                        <a
-                            href="#"
+                        <Link
+                            to="/forgot-password"
                             className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 transition-colors"
                         >
                             Forgot password?
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Submit Button */}
