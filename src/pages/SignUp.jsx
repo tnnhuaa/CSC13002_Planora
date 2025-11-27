@@ -1,4 +1,3 @@
-// src/pages/SignUp.jsx
 import React from "react";
 import UseSignUp from "../hooks/UseSignup";
 import ChangeTheme from "../components/ChangTheme"; // Import component cũ
@@ -21,14 +20,14 @@ const SignUp = () => {
     } = UseSignUp();
 
     return (
-        <div className="min-h-screen bg-[#F3F5F9] dark:bg-[#0F172A] flex items-center justify-center relative font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
+        <div className="min-h-screen bg-[#F3F5F9] dark:bg-[#0F172A] flex items-center justify-center relative font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300 px-4">
             {/* Nút đổi Theme */}
-            <div className="absolute top-6 right-6">
+            <div className="absolute top-4 right-4 md:top-6 md:right-6">
                 <ChangeTheme />
             </div>
 
             {/* Card Container */}
-            <div className="bg-white dark:bg-[#1E293B] p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none w-full max-w-[480px] transition-colors duration-300 border border-transparent dark:border-slate-700">
+            <div className="bg-white dark:bg-[#1E293B] p-6 md:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none w-full max-w-[480px] transition-colors duration-300 border border-transparent dark:border-slate-700">
                 {/* Header */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-blue-200 dark:shadow-none">

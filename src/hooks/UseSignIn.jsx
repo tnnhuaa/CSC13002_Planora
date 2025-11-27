@@ -36,6 +36,12 @@ const UseSignIn = () => {
         // Mock backend check
         setTimeout(() => {
             if (data.account === "admin" && data.password === "12345") {
+                // Authenticated (local storage)
+                localStorage.setItem(
+                    "userLogin",
+                    JSON.stringify({ account: data.account })
+                );
+
                 alert("Login successful!");
                 navigate("/dashboard");
             } else {
