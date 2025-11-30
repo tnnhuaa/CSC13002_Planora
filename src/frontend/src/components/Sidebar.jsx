@@ -16,7 +16,7 @@ import {
     LogOut,
 } from "lucide-react";
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
+const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
     const navigate = useNavigate();
     // Helper render từng mục menu
     const NavItem = ({ to, icon: Icon, label }) => (
@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium
         ${
             isActive
-                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary" 
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
         }`
             }
@@ -60,25 +60,34 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
             >
-                {/* 1. Header: Workspace Select */}
-                <div className="p-4">
-                    <button className="w-full flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-linear-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                                <Rocket size={16} className="text-blue-600" />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-none">
-                                    Personal Workspace
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    1 members
-                                </p>
-                            </div>
+                {/* 1. Header: Brand Logo & Name */}
+                <div className="px-6 py-6 flex items-center gap-3">
+                    {/* --- LOGO P --- */}
+                    <div className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-linear-to-br from-blue-600 to-violet-600 shadow-lg shadow-blue-500/30 overflow-hidden">
+                        {/* Hiệu ứng bóng sáng nhẹ trên logo */}
+                        <div className="absolute top-0 right-0 w-5 h-5 bg-white opacity-20 blur-lg rounded-full transform translate-x-1 -translate-y-1"></div>
+                        
+                        {/* Chữ P cách điệu */}
+                        <span className="font-sans text-2xl font-extrabold text-white leading-none select-none drop-shadow-md">
+                            P
+                        </span>
+                    </div>
+
+                    {/* --- TÊN PROJECT --- */}
+                    <div className="flex flex-col overflow-hidden">
+                        <h1 className="text-xl font-bold text-slate-800 dark:text-white leading-none tracking-tight font-sans truncate">
+                            Planora
+                        </h1>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                            {/* Dấu chấm xanh online */}
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+                                Team Group 11
+                            </span>
                         </div>
-                        <ChevronDown size={16} className="text-slate-400" />
-                    </button>
+                    </div>
                 </div>
+                
 
                 {/* 2. Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-2 space-y-6 custom-scrollbar">
@@ -153,7 +162,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 {/* 3. Footer: Settings (Sticky Bottom) */}
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
                     {/* Nút Settings */}
-                    <NavItem to="/settings" icon={Settings} label="Settings" />
+                    <button
+                        onClick={onOpenSettings}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                    >
+                        <Settings size={18} />
+                        <span>Settings</span>
+                    </button>
 
                     {/* 👇 Nút Logout mới */}
                     <button

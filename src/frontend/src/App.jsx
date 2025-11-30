@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 // Import trang
 import SignIn from "./pages/signin";
@@ -9,7 +9,38 @@ import Dashboard from "./pages/Dashboard";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 
+const COLOR_MAP = {
+    Blue: '#2563eb',   // blue-600
+    Purple: '#9333ea', // purple-600
+    Green: '#16a34a',  // green-600
+    Orange: '#f97316', // orange-500
+    Pink: '#ec4899',   // pink-500
+};
+
 function App() {
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('appSettings');
+        
+        if (savedSettings) {
+            const { darkMode, accentColor } = JSON.parse(savedSettings);
+
+            // A. Xử lý Dark Mode
+            if (darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            // B. Xử lý Accent Color (Màu chủ đạo)
+            const colorHex = COLOR_MAP[accentColor] || COLOR_MAP.Blue;
+            // Gán giá trị màu vào biến CSS --primary
+            document.documentElement.style.setProperty('--primary', colorHex);
+        } else {
+            // Mặc định là Blue nếu chưa cài đặt
+             document.documentElement.style.setProperty('--primary', COLOR_MAP.Blue);
+        }
+    }, []); // Chạy 1 lần khi web load
+
     return (
         <HashRouter>
             <Routes>

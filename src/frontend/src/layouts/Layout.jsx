@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { Menu } from "lucide-react";
+import SettingsModal from "../components/SettingsModal";
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-[#F3F5F9] dark:bg-[#0F172A] flex">
@@ -12,6 +14,8 @@ const Layout = () => {
             <Sidebar
                 isOpen={isSidebarOpen}
                 toggleSidebar={() => setIsSidebarOpen(false)}
+
+                onOpenSettings={() => setIsSettingsModalOpen(true)}
             />
 
             {/* Main Content Area */}
@@ -34,6 +38,11 @@ const Layout = () => {
                     <Outlet />
                 </main>
             </div>
+
+            <SettingsModal 
+                isOpen={isSettingsModalOpen} 
+                onClose={() => setIsSettingsModalOpen(false)} 
+            />
         </div>
     );
 };
