@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium
         ${
             isActive
-                ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary" 
+                ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
         }`
             }
@@ -66,7 +66,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                     <div className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-linear-to-br from-blue-600 to-violet-600 shadow-lg shadow-blue-500/30 overflow-hidden">
                         {/* Hiệu ứng bóng sáng nhẹ trên logo */}
                         <div className="absolute top-0 right-0 w-5 h-5 bg-white opacity-20 blur-lg rounded-full transform translate-x-1 -translate-y-1"></div>
-                        
+
                         {/* Chữ P cách điệu */}
                         <span className="font-sans text-2xl font-extrabold text-white leading-none select-none drop-shadow-md">
                             P
@@ -87,7 +87,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                         </div>
                     </div>
                 </div>
-                
 
                 {/* 2. Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-4 py-2 space-y-6 custom-scrollbar">
@@ -164,7 +163,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                     {/* Nút Settings */}
                     <button
                         onClick={onOpenSettings}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                     >
                         <Settings size={18} />
                         <span>Settings</span>
@@ -173,7 +172,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                     {/* 👇 Nút Logout mới */}
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/20 dark:hover:text-red-400  cursor-pointer"
                     >
                         <LogOut size={18} />
                         <span>Log out</span>
