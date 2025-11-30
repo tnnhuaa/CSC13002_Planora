@@ -9,8 +9,6 @@ const SignUp = () => {
         register,
         handleSubmit,
         errors,
-        isDarkMode,
-        toggleTheme,
         isLoading,
         showPassword,
         togglePassword,
