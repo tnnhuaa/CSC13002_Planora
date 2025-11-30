@@ -14,10 +14,7 @@ const SignIn = () => {
         apiError,
         showPassword,
         isLoading,
-        isDarkMode,
 
-        // Actions
-        toggleTheme,
         togglePasswordVisibility,
         onSubmit,
     } = UseSignIn();
