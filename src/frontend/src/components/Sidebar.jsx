@@ -16,8 +16,14 @@ import {
     LogOut,
 } from "lucide-react";
 
+import { useTheme } from "../context/ThemeContext";
+
 const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
     const navigate = useNavigate();
+
+    const { settings } = useTheme();
+
+    const displaySubtitle = settings.jobTitle || "Team Group 11";
     // Helper render từng mục menu
     const NavItem = ({ to, icon: Icon, label }) => (
         <NavLink

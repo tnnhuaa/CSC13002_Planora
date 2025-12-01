@@ -4,7 +4,34 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>finalproject</title>
+    <title>Planora</title>
+
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('appSettings');
+          var settings = saved ? JSON.parse(saved) : null;
+          
+          if (settings && settings.darkMode === true) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+
+          var COLORS = { 
+            Blue: '#2563eb', Purple: '#9333ea', Green: '#16a34a', 
+            Orange: '#f97316', Pink: '#ec4899' 
+          };
+          var accentKey = (settings && settings.accentColor) ? settings.accentColor : 'Blue';
+          var colorHex = COLORS[accentKey] || COLORS.Blue;
+          
+          document.documentElement.style.setProperty('--primary', colorHex);
+
+        } catch (e) {
+          console.error("Init error:", e);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
