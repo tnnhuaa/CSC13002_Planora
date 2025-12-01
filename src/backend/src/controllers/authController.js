@@ -124,3 +124,67 @@ export const signOut = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const refreshToken = async (req, res) => {
+  try {
+    // Take refresh token from cookies
+    const token = req.cookies?.refreshToken;
+    if (!token) {
+      return res.status(401).json({ message: "No refresh token provided" });
+    }
+
+    // Compare with refresh tokens in database
+    const session = await Session.findOne({ refreshToken: token });
+    if (!session) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
+    // Check if token is valid and not expired
+    if (session.expiresAt < new Date()) {
+      return res.status(403).json({ message: "Refresh token has expired" });
+    }
+
+    // If valid, create new access token
+    const accessToken = jwt.sign(
+      { userID: session.userID },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: ACCESS_TOKEN_TTL,
+      }
+    );
+    // return new access token
+    return res.status(200).json({ accessToken });
+  } catch (error) {
+    console.error("Error occurred when refreshing token", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+  } catch (error) {
+    console.error("Error occurred when forgot password", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email not found" });
+    }
+
+    return res.sendStatus(204);
+  } catch (error) {}
+};
+
+export const changePassword = async (req, res) => {
+  try {
+  } catch (error) {}
+};
