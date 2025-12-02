@@ -2,12 +2,13 @@
 import React, { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 // Import trang
-import SignIn from "./pages/signin";
+import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
+import Projects from "./pages/Project";
 
 const COLOR_MAP = {
     Blue: '#2563eb',   // blue-600
@@ -81,11 +82,7 @@ function App() {
                         />
                         <Route
                             path="/projects"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Projects
-                                </div>
-                            }
+                            element={<Projects />}
                         />
                         <Route
                             path="/backlog"
