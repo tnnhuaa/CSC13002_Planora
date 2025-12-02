@@ -2,6 +2,8 @@ import express from "express";
 import { connectDB } from "./config/db.js";
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
+import projectRoute from './routes/projectRoute.js';
+import taskRoute from './routes/taskRoute.js';
 import { protectedRoute } from "./middleware/authMiddleware.js";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -23,6 +25,12 @@ app.use("/api/auth", authRoute);
 // private routes
 app.use(protectedRoute);
 app.use("/api/users", userRoute);
+
+// Project routes
+app.use('/api/projects', projectRoute);
+
+// Task routes
+app.use('/api/tasks', taskRoute);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
