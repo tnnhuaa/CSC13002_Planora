@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema(
     avatarID: {
       type: String,
     },
+    role: {
+      type: String,
+      enum: ["viewer", "assignee", "project manager", "admin"],
+      default: "viewer",
+    },
   },
   {
     timestamps: true,
