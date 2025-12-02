@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import Session from "../models/Session.js";
+import OTP from "../models/OTP.js";
+import { sendOTPEmail, verifyOTP } from "../services/emailService.js";
 
 const ACCESS_TOKEN_TTL = "30m"; // normal: 15mins
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 days (milliseconds)
@@ -161,18 +163,15 @@ export const refreshToken = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
   try {
-  } catch (error) {
-    console.error("Error occurred when forgot password", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-export const resetPassword = async (req, res) => {
-  try {
     const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
     }
 
     const user = await User.findOne({ email });
@@ -180,8 +179,88 @@ export const resetPassword = async (req, res) => {
       return res.status(404).json({ message: "Email not found" });
     }
 
-    return res.sendStatus(204);
-  } catch (error) {}
+    const result = await sendOTPEmail(email, user.username);
+
+    if (!result.success) {
+      return res.status(429).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in forgotPassword:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to send OTP. Please try again." });
+  }
+};
+
+export const verifyOTPCode = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const result = await verifyOTP(email, otp);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in verifyOTPCode:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to verify OTP. Please try again." });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    const verificationResult = await verifyOTP(email, otp);
+
+    if (!verificationResult.success) {
+      return res.status(400).json(verificationResult);
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.hashedPassword = hashedPassword;
+    await user.save();
+
+    await OTP.cleanupOldOTPs(email);
+    await Session.deleteMany({ userID: user._id });
+
+    return res.status(200).json({
+      message:
+        "Password reset successfully. Please sign in with your new password",
+    });
+  } catch (error) {
+    console.error("Error in resetPassword:", error);
+    return res
+      .status(500)
+      .json({ message: "Failed to reset password. Please try again." });
+  }
 };
 
 export const changePassword = async (req, res) => {
