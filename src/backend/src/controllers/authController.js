@@ -32,6 +32,16 @@ export const signUp = async (req, res) => {
       });
     }
 
+    // Password must contain at least one uppercase letter and one number
+    const uppercaseRegex = /[A-Z]/;
+    const numberRegex = /[0-9]/;
+    if (!uppercaseRegex.test(password) || !numberRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one uppercase letter and one number",
+      });
+    }
+
     const duplicate_name = await User.findOne({ username });
 
     if (duplicate_name) {
@@ -230,6 +240,16 @@ export const resetPassword = async (req, res) => {
     if (newPassword.length < 6) {
       return res.status(400).json({
         message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // Password must contain at least one uppercase letter and one number
+    const uppercaseRegex = /[A-Z]/;
+    const numberRegex = /[0-9]/;
+    if (!uppercaseRegex.test(newPassword) || !numberRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must contain at least one uppercase letter and one number",
       });
     }
 

@@ -4,63 +4,47 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/useAuthStore";
 
 // Schema validation
 const signInSchema = z.object({
-    account: z.string().trim().min(1, "Please enter your account"),
-    password: z
-        .string()
-        .min(1, "Please enter your password")
-        .min(3, "Password"),
+  account: z.string().trim().min(1, "Please enter your account"),
+  password: z.string().min(1, "Please enter your password"),
 });
 
 const UseSignIn = () => {
-    const navigate = useNavigate();
-    const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [apiError, setApiError] = useState("");
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const { signin, isLoading, error, clearError } = useAuthStore();
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm({
-        resolver: zodResolver(signInSchema),
-        mode: "all",
-    });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(signInSchema),
+    mode: "all",
+  });
 
-    const onSubmitLogic = async (data) => {
-        setIsLoading(true);
-        setApiError("");
+  const onSubmitLogic = async (data) => {
+    clearError();
+    const result = await signin(data.account, data.password);
 
-        // Mock backend check
-        setTimeout(() => {
-            if (data.account === "admin" && data.password === "12345") {
-                // Authenticated (local storage)
-                localStorage.setItem(
-                    "userLogin",
-                    JSON.stringify({ account: data.account })
-                );
+    if (result.success) {
+      navigate("/dashboard");
+    }
+  };
 
-                alert("Login successful!");
-                navigate("/dashboard");
-            } else {
-                setApiError("Invalid account or password");
-            }
-            setIsLoading(false);
-        }, 1000);
-    };
-
-    return {
-        register,
-        handleSubmit,
-        errors,
-        apiError,
-        showPassword,
-        isLoading,
-        togglePasswordVisibility: () => setShowPassword(!showPassword),
-        onSubmit: onSubmitLogic,
-    };
+  return {
+    register,
+    handleSubmit,
+    errors,
+    apiError: error,
+    showPassword,
+    isLoading,
+    togglePasswordVisibility: () => setShowPassword(!showPassword),
+    onSubmit: onSubmitLogic,
+  };
 };
 
 export default UseSignIn;

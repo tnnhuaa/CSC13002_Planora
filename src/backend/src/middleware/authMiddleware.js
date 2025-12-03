@@ -14,25 +14,31 @@ export const protectedRoute = async (req, res, next) => {
         .json({ message: "No token, authorization denied" });
     }
 
-    jwt.verify(
-      token,
-      process.env.ACCESS_TOKEN_SECRET,
-      async (err, decodedUser) => {
-        if (err) {
-          console.error(err);
-          return res.status(403).json({ message: "Token is not valid" });
-        }
+    // Use synchronous verify to properly catch TokenExpiredError
+    try {
+      const decodedUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-        // Find user
-        const user = await User.findById(decodedUser.userID).select(
-          "-hashedPassword"
-        );
+      // Find user
+      const user = await User.findById(decodedUser.userID).select(
+        "-hashedPassword"
+      );
 
-        // Return user in request
-        req.user = user;
-        next();
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
       }
-    );
+
+      // Return user in request
+      req.user = user;
+      next();
+    } catch (jwtError) {
+      console.error(jwtError);
+      // Return 401 for expired tokens to trigger refresh in frontend
+      if (jwtError.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token expired" });
+      }
+      // Return 403 for other token errors
+      return res.status(403).json({ message: "Token is not valid" });
+    }
   } catch (error) {
     console.log("Error in auth middleware", error);
     return res.status(500).json({ message: "Server Error" });
