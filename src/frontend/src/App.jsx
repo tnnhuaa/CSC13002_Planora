@@ -6,39 +6,43 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
 
 const COLOR_MAP = {
-    Blue: '#2563eb',   // blue-600
-    Purple: '#9333ea', // purple-600
-    Green: '#16a34a',  // green-600
-    Orange: '#f97316', // orange-500
-    Pink: '#ec4899',   // pink-500
+    Blue: "#2563eb", // blue-600
+    Purple: "#9333ea", // purple-600
+    Green: "#16a34a", // green-600
+    Orange: "#f97316", // orange-500
+    Pink: "#ec4899", // pink-500
 };
 
 function App() {
     useEffect(() => {
-        const savedSettings = localStorage.getItem('appSettings');
-        
+        const savedSettings = localStorage.getItem("appSettings");
+
         if (savedSettings) {
             const { darkMode, accentColor } = JSON.parse(savedSettings);
 
             // A. Xử lý Dark Mode
             if (darkMode) {
-                document.documentElement.classList.add('dark');
+                document.documentElement.classList.add("dark");
             } else {
-                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.remove("dark");
             }
 
             // B. Xử lý Accent Color (Màu chủ đạo)
             const colorHex = COLOR_MAP[accentColor] || COLOR_MAP.Blue;
             // Gán giá trị màu vào biến CSS --primary
-            document.documentElement.style.setProperty('--primary', colorHex);
+            document.documentElement.style.setProperty("--primary", colorHex);
         } else {
             // Mặc định là Blue nếu chưa cài đặt
-             document.documentElement.style.setProperty('--primary', COLOR_MAP.Blue);
+            document.documentElement.style.setProperty(
+                "--primary",
+                COLOR_MAP.Blue
+            );
         }
     }, []); // Chạy 1 lần khi web load
 
@@ -61,6 +65,9 @@ function App() {
                         {/* Dashboard */}
                         <Route path="/dashboard" element={<Dashboard />} />
 
+                        {/* Profile */}
+                        <Route path="/profile" element={<Profile />} />
+
                         {/* TODO: Thiết kế xong chuyển element thành giống Dashboard */}
 
                         {/* Other pages */}
@@ -80,10 +87,7 @@ function App() {
                                 </div>
                             }
                         />
-                        <Route
-                            path="/projects"
-                            element={<Projects />}
-                        />
+                        <Route path="/projects" element={<Projects />} />
                         <Route
                             path="/backlog"
                             element={
@@ -120,7 +124,7 @@ function App() {
                             path="/risks"
                             element={
                                 <div className="text-slate-800 dark:text-white">
-                                    Trang Ris
+                                    Trang Risk
                                 </div>
                             }
                         />
