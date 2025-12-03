@@ -1,4 +1,5 @@
 import { taskService } from '../services/taskService.js';
+import { projectService } from '../services/projectService.js';
 
 class TaskController {
     async create(req, res) {
@@ -53,29 +54,55 @@ class TaskController {
     async getTasksByProject(req, res) {
         try {
             const { projectId } = req.params;
-            const tasks = await taskService.getTasksByProject(projectId);
+            const { role, id: userId } = req.user;
+            
+            const project = await projectService.getProjectById(projectId);
+            if (!project) {
+                return res.status(404).json({ message: 'Project not found' });
+            }
+
+            let tasks = await taskService.getTasksByProject(projectId);
+
+            if (role === 'assignee') {
+                tasks = tasks.filter(task => task.assignee._id.toString() === userId);
+            } else if (role === 'project manager') {
+                if (project.manager.toString() !== userId) {
+                    return res.status(403).json({ message: 'You can only view tasks in your own projects' });
+                }
+            }
 
             return res.status(200).json({
-                message: `Get tasks for project ${projectId} successfully!`,
+                message: `Get tasks for project successfully!`,
                 data: tasks
             });
         } catch (error) {
-            return res.status(400).json({ message: error.message });
+            return res.status(500).json({ message: error.message });
         }
     }
 
-    async getTasksByAssignee(req, res) {
+    async getTasksForUser(req, res) {
         try {
-            const userId = req.params.userId || req.user._id; 
+            const { role, id: userId } = req.user;
+
+            let tasks = [];
             
-            const tasks = await taskService.getTasksByAssignee(userId);
+            if (role === 'assignee') {
+                tasks = await taskService.getTasksByAssignee(userId);
+            } else if (role === 'project manager') {
+                const projects = await projectService.getProjectByUser(userId, 'project manager');
+                let projectIds = projects.map(p => p._id);
+
+                tasks = await taskService.getTasksByProject(projectIds);
+            } else if (role === 'admin') {
+                tasks = await taskService.getAllTasks();
+            }
 
             return res.status(200).json({
-                message: 'Get assigned tasks successfully!',
+                message: 'Get tasks successfully!',
                 data: tasks
             });
         } catch (error) {
-            return res.status(400).json({ message: error.message });
+            return res.status(500).json({ message: error.message });
         }
     }
 

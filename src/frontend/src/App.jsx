@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
+import Tasks from "./pages/Task";
 
 const COLOR_MAP = {
     Blue: "#2563eb", // blue-600
@@ -106,11 +107,7 @@ function App() {
                         />
                         <Route
                             path="/tasks"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Tasks
-                                </div>
-                            }
+                            element={<Tasks />}
                         />
                         <Route
                             path="/work_log"

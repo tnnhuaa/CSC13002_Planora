@@ -1,24 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, CheckCircle, Users, Edit2, Trash2 } from 'lucide-react';
-import { useProjects } from '../hooks/UseProjects';
+import { projectService } from '../services/projectService';
+import { userService } from '../services/userService';
 
 function Projects() {
+    const [projects, setProjects] = useState([]);
+    const [assignees, setAssignees] = useState([]);
+
+    const [currentUser, setCurrentUser] = useState(null);
+
+    const [stats, setStats] = useState({ total: 0, active: 0, completed: 0 });
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { projects, loading, stats, createProject, deleteProject, updateProject } = useProjects();
 
     const [formData, setFormData] = useState({
-        name: '',
+        title: '',
         description: '',
-        startDate: '',
-        endDate: ''
+        members: []
     });
 
+    // Fetch data
+    const fetchProjects = async () => {
+        try {
+            setLoading(true);
+            
+            const [projectRes, assigneeRes, userRes] = await Promise.all([
+                projectService.getMyProjects(),
+                userService.getAssignee().catch(err => {
+                    return { data: [] };
+                }),
+                userService.getCurrentUser()
+            ]);
+            
+            const projectList = projectRes.data || []; 
+            
+            setProjects(projectList);
+
+            const total = projectList.length;
+            const active = projectList.filter(p => p.status === 'in_progress' || p.status === 'todo').length;
+            const completed = projectList.filter(p => p.status === 'done').length;
+
+            setStats({ total, active, completed });
+
+            setAssignees(assigneeRes.data || []);
+
+            setCurrentUser(userRes.user);
+        } catch (error) {
+            console.error("Error when fetching projects:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
+    // Process
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createProject(formData);
+            await projectService.createProject(formData);
             setIsModalOpen(false);
-            setFormData({ name: '', description: '', startDate: '', endDate: '' });
+            setFormData({ title: '', description: '', members: [] });
+            
+            const res = await projectService.getMyProjects();
+            setProjects(res.data || []);
         } catch (error) {
             console.error('Failed to create project:', error);
         }
@@ -27,7 +74,9 @@ function Projects() {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this project?')) {
             try {
-                await deleteProject(id);
+                await projectService.deleteProject(id);
+                const res = await projectService.getMyProjects();
+                setProjects(res.data || []);
             } catch (error) {
                 console.error('Failed to delete project:', error);
             }
@@ -47,13 +96,15 @@ function Projects() {
                             Create and manage your projects
                         </p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                    >
-                        <Plus size={20} />
-                        Create Project
-                    </button>
+                    {currentUser && (currentUser.role === 'project manager' || currentUser.role === 'admin') && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                        >
+                            <Plus size={20} />
+                            Create Project
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -98,13 +149,13 @@ function Projects() {
                 <div className="grid grid-cols-2 gap-4">
                     {projects.map(project => (
                         <div
-                            key={project.id}
+                            key={project._id}
                             className="bg-slate-50 dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700"
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-1">
-                                        {project.name}
+                                        {project.title}
                                     </h3>
                                     <p className="text-sm text-slate-500 dark:text-slate-400">
                                         {project.description}
@@ -115,7 +166,7 @@ function Projects() {
                                         <Edit2 size={16} className="text-slate-600 dark:text-slate-400" />
                                     </button>
                                     <button 
-                                        onClick={() => handleDelete(project.id)}
+                                        onClick={() => handleDelete(project._id)}
                                         className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                     >
                                         <Trash2 size={16} className="text-red-600" />
@@ -161,7 +212,7 @@ function Projects() {
                                     <Users size={16} className="text-slate-400" />
                                     <div>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">Members</p>
-                                        <p className="text-sm font-medium text-slate-800 dark:text-white">{project.members}</p>
+                                        <p className="text-sm font-medium text-slate-800 dark:text-white">{Array.isArray(project.members) ? project.members.length : 0} members</p>
                                     </div>
                                 </div>
                             </div>
@@ -200,8 +251,8 @@ function Projects() {
                                     <input
                                         type="text"
                                         placeholder="Enter project name..."
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                         className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
                                         required
                                     />
@@ -219,31 +270,70 @@ function Projects() {
                                         rows={3}
                                     />
                                 </div>
+                            </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                            Start Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={formData.startDate}
-                                            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                            End Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={formData.endDate}
-                                            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                                        />
-                                    </div>
+                            {/* MULTI-SELECT ASSIGNEES */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Assign To (Select Members)
+                                </label>
+                                
+                                <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 max-h-48 overflow-y-auto">
+                                    {assignees.length === 0 ? (
+                                        <p className="text-sm text-slate-500 italic">No users available.</p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {assignees.map(user => (
+                                                <label 
+                                                    key={user._id} 
+                                                    className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-600 rounded cursor-pointer transition-colors"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        value={user._id}
+                                                        // Logic check: ID có nằm trong mảng formData.assignee không?
+                                                        checked={formData.members.includes(user._id)}
+                                                        
+                                                        // Logic Onchange: Thêm vào hoặc Xóa đi
+                                                        onChange={(e) => {
+                                                            const userId = user._id;
+                                                            setFormData(prev => {
+                                                                const currentAssignees = prev.members;
+                                                                
+                                                                if (currentAssignees.includes(userId)) {
+                                                                    // Nếu đã có -> Xóa đi (Uncheck)
+                                                                    return {
+                                                                        ...prev,
+                                                                        members: currentAssignees.filter(id => id !== userId)
+                                                                    };
+                                                                } else {
+                                                                    // Nếu chưa có -> Thêm vào (Check)
+                                                                    return {
+                                                                        ...prev,
+                                                                        members: [...currentAssignees, userId]
+                                                                    };
+                                                                }
+                                                            });
+                                                        }}
+                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                    />
+                                                    <div className="text-sm">
+                                                        <span className="font-medium text-slate-700 dark:text-slate-200">
+                                                            {user.username}
+                                                        </span>
+                                                        <span className="block text-xs text-slate-500 dark:text-slate-400">
+                                                            {user.email}
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
+                                {/* Hiển thị số lượng đã chọn cho user dễ thấy */}
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Selected: {formData.members.length} members
+                                </p>
                             </div>
 
                             <div className="flex justify-end gap-3 mt-6">
