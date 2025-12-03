@@ -25,5 +25,12 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
+.env
+src/backend/.env
+src/frontend/.env
+*.env.local
+*.env.production
+
 #back-end
 #...
