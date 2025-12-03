@@ -34,7 +34,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
         ${
             isActive
                 ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-500"
         }`
             }
         >
@@ -170,7 +170,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                     {/* Profile Section */}
                     <div
                         onClick={() => navigate("/profile")}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-500 cursor-pointer"
                     >
                         {/* Avatar Circle */}
                         <div
@@ -188,7 +188,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                     {/* Nút Settings */}
                     <button
                         onClick={onOpenSettings}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-500 cursor-pointer"
                     >
                         <Settings size={18} />
                         <span>Settings</span>
