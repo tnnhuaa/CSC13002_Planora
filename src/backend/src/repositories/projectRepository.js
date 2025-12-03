@@ -1,4 +1,5 @@
-import Project from "../models/Project.js";
+import Project from '../models/Project.js';
+import Task from '../models/Task.js';
 
 class ProjectRepository {
     async generateKey() {
@@ -16,18 +17,32 @@ class ProjectRepository {
     async findAll(filter = {}) {
         return await Project.find(filter)
             .populate('manager', "username email avatarURL")
+            .populate('members', 'username email avatarURL')
             .sort({ createdAt: -1 });
     }
 
     async findById(id) {
         return await Project.findById(id)
-            .populate('manager', "username email avatarURL");
+            .populate('manager', "username email avatarURL")
+            .populate('members', 'username email avatarURL');
     }
 
     async findByManager(manager) {
         return await Project.find({ manager: manager })
             .populate('manager', "username email avatarURL")
+            .populate('members', 'username email avatarURL')
             .sort({ createdAt: -1 });
+    }
+
+    async findByAssignee (assigneeId) {
+        const projectIds = await Task.find({ assignee: assigneeId }).distinct('project');
+
+        const projects = await Project.find({ _id: { $in: projectIds } })
+            .populate('manager', 'username email')
+            .populate('members', 'username email avatarURL')
+            .sort({ createdAt: -1 });
+
+        return projects;
     }
 
     async update(id, updateData) {
