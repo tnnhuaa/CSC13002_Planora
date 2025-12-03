@@ -7,7 +7,8 @@
             title: { type: String, required: true },
             description: { type: String },
             manager: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-            key: { type: String, required: true, unique: true }
+            key: { type: String, required: true, unique: true },
+            members: [{ type: Schema.Types.ObjectId, ref: 'User' }]
         },
         { timestamps: true }
     )

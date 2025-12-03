@@ -60,14 +60,8 @@ class TaskService {
         return await taskRepository.findByAssigneeId(userId);
     }
 
-    async getTasksByProject(projectId) {
-        // Validate project
-        const projectExists = await projectRepository.findById(projectId);
-        if (!projectExists) {
-            throw new Error("Project not found! Cannot find task.");
-        }
-
-        return await taskRepository.findByProjectId(projectId);
+    async getTasksByProject(projectIds) {
+        return await taskRepository.findByProjects(projectIds);
     }
 
     async updateTask(id, updateData, user) {

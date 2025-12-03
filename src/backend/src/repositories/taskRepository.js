@@ -51,9 +51,9 @@ class TaskRepository {
         .populate("project", "title key");
     }
 
-    async findByProjectId(projectId) {
+    async findByProjects(projectIds) {
         return await Task
-        .find({ project: projectId })
+        .find({ project: { $in: projectIds } })
         .populate("assignee reporter", "username email avatarURL")
         .sort({ createdAt: -1 });
     }
