@@ -7,7 +7,7 @@ const ProfileInfoCard = ({ icon: Icon, label, value }) => {
                 <Icon size={16} />
                 {label}
             </label>
-            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-900 dark:text-white font-medium">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-900 dark:text-white font-medium">
                 {value}
             </div>
         </div>

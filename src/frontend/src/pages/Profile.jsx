@@ -35,7 +35,7 @@ const Profile = () => {
                 {/* Profile Card */}
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     {/* Banner */}
-                    <div className="h-32 bg-gradient-to-r from-blue-600 to-violet-600"></div>
+                    <div className="h-32 bg-slate-400"></div>
 
                     {/* Content */}
                     <div className="p-6 md:p-8">
