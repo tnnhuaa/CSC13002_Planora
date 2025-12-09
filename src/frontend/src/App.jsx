@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
+import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Task";
 
 const COLOR_MAP = {
@@ -90,6 +91,10 @@ function App() {
                         />
                         <Route path="/projects" element={<Projects />} />
                         <Route
+                            path="/projects/:projectId"
+                            element={<ProjectDetail />}
+                        />
+                        <Route
                             path="/backlog"
                             element={
                                 <div className="text-slate-800 dark:text-white">
@@ -105,10 +110,7 @@ function App() {
                                 </div>
                             }
                         />
-                        <Route
-                            path="/tasks"
-                            element={<Tasks />}
-                        />
+                        <Route path="/tasks" element={<Tasks />} />
                         <Route
                             path="/work_log"
                             element={

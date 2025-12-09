@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, CheckCircle, Users, Edit2, Trash2 } from 'lucide-react';
-import { projectService } from '../services/projectService';
-import { userService } from '../services/userService';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    Plus,
+    Calendar,
+    CheckCircle,
+    Users,
+    Edit2,
+    Trash2,
+} from "lucide-react";
+import { projectService } from "../services/projectService";
+import { userService } from "../services/userService";
 
 function Projects() {
+    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [assignees, setAssignees] = useState([]);
 
@@ -14,31 +23,35 @@ function Projects() {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        members: []
+        title: "",
+        description: "",
+        members: [],
     });
 
     // Fetch data
     const fetchProjects = async () => {
         try {
             setLoading(true);
-            
+
             const [projectRes, assigneeRes, userRes] = await Promise.all([
                 projectService.getMyProjects(),
-                userService.getAssignee().catch(err => {
+                userService.getAssignee().catch((err) => {
                     return { data: [] };
                 }),
-                userService.getCurrentUser()
+                userService.getCurrentUser(),
             ]);
-            
-            const projectList = projectRes.data || []; 
-            
+
+            const projectList = projectRes.data || [];
+
             setProjects(projectList);
 
             const total = projectList.length;
-            const active = projectList.filter(p => p.status === 'in_progress' || p.status === 'todo').length;
-            const completed = projectList.filter(p => p.status === 'done').length;
+            const active = projectList.filter(
+                (p) => p.status === "in_progress" || p.status === "todo"
+            ).length;
+            const completed = projectList.filter(
+                (p) => p.status === "done"
+            ).length;
 
             setStats({ total, active, completed });
 
@@ -62,23 +75,23 @@ function Projects() {
         try {
             await projectService.createProject(formData);
             setIsModalOpen(false);
-            setFormData({ title: '', description: '', members: [] });
-            
+            setFormData({ title: "", description: "", members: [] });
+
             const res = await projectService.getMyProjects();
             setProjects(res.data || []);
         } catch (error) {
-            console.error('Failed to create project:', error);
+            console.error("Failed to create project:", error);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this project?')) {
+        if (window.confirm("Are you sure you want to delete this project?")) {
             try {
                 await projectService.deleteProject(id);
                 const res = await projectService.getMyProjects();
                 setProjects(res.data || []);
             } catch (error) {
-                console.error('Failed to delete project:', error);
+                console.error("Failed to delete project:", error);
             }
         }
     };
@@ -96,15 +109,17 @@ function Projects() {
                             Create and manage your projects
                         </p>
                     </div>
-                    {currentUser && (currentUser.role === 'project manager' || currentUser.role === 'admin') && (
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                        >
-                            <Plus size={20} />
-                            Create Project
-                        </button>
-                    )}
+                    {currentUser &&
+                        (currentUser.role === "project manager" ||
+                            currentUser.role === "admin") && (
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                            >
+                                <Plus size={20} />
+                                Create Project
+                            </button>
+                        )}
                 </div>
             </div>
 
@@ -147,10 +162,11 @@ function Projects() {
 
                 {/* Projects Grid */}
                 <div className="grid grid-cols-2 gap-4">
-                    {projects.map(project => (
+                    {projects.map((project) => (
                         <div
                             key={project._id}
-                            className="bg-slate-50 dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700"
+                            onClick={() => navigate(`/projects/${project._id}`)}
+                            className="bg-slate-50 dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600 transition"
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div>
@@ -163,13 +179,21 @@ function Projects() {
                                 </div>
                                 <div className="flex gap-2">
                                     <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded">
-                                        <Edit2 size={16} className="text-slate-600 dark:text-slate-400" />
+                                        <Edit2
+                                            size={16}
+                                            className="text-slate-600 dark:text-slate-400"
+                                        />
                                     </button>
-                                    <button 
-                                        onClick={() => handleDelete(project._id)}
+                                    <button
+                                        onClick={() =>
+                                            handleDelete(project._id)
+                                        }
                                         className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                     >
-                                        <Trash2 size={16} className="text-red-600" />
+                                        <Trash2
+                                            size={16}
+                                            className="text-red-600"
+                                        />
                                     </button>
                                 </div>
                             </div>
@@ -181,13 +205,19 @@ function Projects() {
                             {/* Progress Bar */}
                             <div className="mb-4">
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-slate-600 dark:text-slate-400">Progress</span>
-                                    <span className="text-slate-800 dark:text-white font-medium">{project.progress}%</span>
+                                    <span className="text-slate-600 dark:text-slate-400">
+                                        Progress
+                                    </span>
+                                    <span className="text-slate-800 dark:text-white font-medium">
+                                        {project.progress}%
+                                    </span>
                                 </div>
                                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                                     <div
                                         className="bg-blue-600 h-2 rounded-full transition-all"
-                                        style={{ width: `${project.progress}%` }}
+                                        style={{
+                                            width: `${project.progress}%`,
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -195,24 +225,48 @@ function Projects() {
                             {/* Project Info */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="flex items-center gap-2">
-                                    <Calendar size={16} className="text-slate-400" />
+                                    <Calendar
+                                        size={16}
+                                        className="text-slate-400"
+                                    />
                                     <div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Start Date</p>
-                                        <p className="text-sm font-medium text-slate-800 dark:text-white">{project.startDate}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Start Date
+                                        </p>
+                                        <p className="text-sm font-medium text-slate-800 dark:text-white">
+                                            {project.startDate}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <CheckCircle size={16} className="text-slate-400" />
+                                    <CheckCircle
+                                        size={16}
+                                        className="text-slate-400"
+                                    />
                                     <div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Tasks</p>
-                                        <p className="text-sm font-medium text-slate-800 dark:text-white">{project.tasks}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Tasks
+                                        </p>
+                                        <p className="text-sm font-medium text-slate-800 dark:text-white">
+                                            {project.tasks}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Users size={16} className="text-slate-400" />
+                                    <Users
+                                        size={16}
+                                        className="text-slate-400"
+                                    />
                                     <div>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Members</p>
-                                        <p className="text-sm font-medium text-slate-800 dark:text-white">{Array.isArray(project.members) ? project.members.length : 0} members</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Members
+                                        </p>
+                                        <p className="text-sm font-medium text-slate-800 dark:text-white">
+                                            {Array.isArray(project.members)
+                                                ? project.members.length
+                                                : 0}{" "}
+                                            members
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -252,7 +306,12 @@ function Projects() {
                                         type="text"
                                         placeholder="Enter project name..."
                                         value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                title: e.target.value,
+                                            })
+                                        }
                                         className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
                                         required
                                     />
@@ -265,7 +324,12 @@ function Projects() {
                                     <textarea
                                         placeholder="Describe the project..."
                                         value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                description: e.target.value,
+                                            })
+                                        }
                                         className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
                                         rows={3}
                                     />
@@ -277,43 +341,65 @@ function Projects() {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                     Assign To (Select Members)
                                 </label>
-                                
+
                                 <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 max-h-48 overflow-y-auto">
                                     {assignees.length === 0 ? (
-                                        <p className="text-sm text-slate-500 italic">No users available.</p>
+                                        <p className="text-sm text-slate-500 italic">
+                                            No users available.
+                                        </p>
                                     ) : (
                                         <div className="space-y-2">
-                                            {assignees.map(user => (
-                                                <label 
-                                                    key={user._id} 
+                                            {assignees.map((user) => (
+                                                <label
+                                                    key={user._id}
                                                     className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-600 rounded cursor-pointer transition-colors"
                                                 >
                                                     <input
                                                         type="checkbox"
                                                         value={user._id}
                                                         // Logic check: ID có nằm trong mảng formData.assignee không?
-                                                        checked={formData.members.includes(user._id)}
-                                                        
+                                                        checked={formData.members.includes(
+                                                            user._id
+                                                        )}
                                                         // Logic Onchange: Thêm vào hoặc Xóa đi
                                                         onChange={(e) => {
-                                                            const userId = user._id;
-                                                            setFormData(prev => {
-                                                                const currentAssignees = prev.members;
-                                                                
-                                                                if (currentAssignees.includes(userId)) {
-                                                                    // Nếu đã có -> Xóa đi (Uncheck)
-                                                                    return {
-                                                                        ...prev,
-                                                                        members: currentAssignees.filter(id => id !== userId)
-                                                                    };
-                                                                } else {
-                                                                    // Nếu chưa có -> Thêm vào (Check)
-                                                                    return {
-                                                                        ...prev,
-                                                                        members: [...currentAssignees, userId]
-                                                                    };
+                                                            const userId =
+                                                                user._id;
+                                                            setFormData(
+                                                                (prev) => {
+                                                                    const currentAssignees =
+                                                                        prev.members;
+
+                                                                    if (
+                                                                        currentAssignees.includes(
+                                                                            userId
+                                                                        )
+                                                                    ) {
+                                                                        // Nếu đã có -> Xóa đi (Uncheck)
+                                                                        return {
+                                                                            ...prev,
+                                                                            members:
+                                                                                currentAssignees.filter(
+                                                                                    (
+                                                                                        id
+                                                                                    ) =>
+                                                                                        id !==
+                                                                                        userId
+                                                                                ),
+                                                                        };
+                                                                    } else {
+                                                                        // Nếu chưa có -> Thêm vào (Check)
+                                                                        return {
+                                                                            ...prev,
+                                                                            members:
+                                                                                [
+                                                                                    ...currentAssignees,
+                                                                                    userId,
+                                                                                ],
+                                                                        };
+                                                                    }
                                                                 }
-                                                            });
+                                                            );
                                                         }}
                                                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                                     />
