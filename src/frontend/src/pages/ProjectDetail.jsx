@@ -5,12 +5,12 @@ import {
     Calendar,
     Users,
     Plus,
-    Search,
-    ChevronDown,
     Send,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { generateAvatarColor } from "../utils/avatarUtils";
+import { UseTaskFilter } from "../hooks/UseTaskFilter";
+import TaskFilterBar from "../components/TaskFilterBar";
 
 function ProjectDetail() {
     const { projectId } = useParams();
@@ -20,6 +20,9 @@ function ProjectDetail() {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [loading, setLoading] = useState(true);
+
+    // Use custom hook for task filtering, searching, sorting
+    const taskFilter = UseTaskFilter(tasks);
 
     // Fetch project details
     useEffect(() => {
@@ -41,11 +44,12 @@ function ProjectDetail() {
                             priority: "High",
                             type: "Bug",
                             status: "todo",
+                            sprint: "Sprint 1",
                             assignee: {
                                 username: "Alice Johnson",
                                 avatar: "AJ",
                             },
-                            dueDate: "Due Soon",
+                            dueDate: "2024-12-13T00:00:00Z",
                         },
                         {
                             _id: "2",
@@ -54,11 +58,12 @@ function ProjectDetail() {
                             priority: "High",
                             type: "Feature",
                             status: "in_progress",
+                            sprint: "Sprint 2",
                             assignee: {
                                 username: "Alice Johnson",
                                 avatar: "AJ",
                             },
-                            dueDate: "Due Soon",
+                            dueDate: "2024-12-15T00:00:00Z",
                         },
                         {
                             _id: "3",
@@ -67,8 +72,9 @@ function ProjectDetail() {
                             priority: "Medium",
                             type: "Feature",
                             status: "in_progress",
+                            sprint: "Sprint 2",
                             assignee: { username: "Carol White", avatar: "CW" },
-                            dueDate: "Dec 16",
+                            dueDate: "2024-12-16T00:00:00Z",
                         },
                         {
                             _id: "4",
@@ -77,8 +83,9 @@ function ProjectDetail() {
                             priority: "Medium",
                             type: "Feature",
                             status: "review",
+                            sprint: "Sprint 3",
                             assignee: { username: "Bob Smith", avatar: "BS" },
-                            dueDate: "Dec 19",
+                            dueDate: "2024-12-19T00:00:00Z",
                         },
                         {
                             _id: "5",
@@ -87,8 +94,9 @@ function ProjectDetail() {
                             priority: "Low",
                             type: "Feature",
                             status: "done",
+                            sprint: "Sprint 3",
                             assignee: { username: "Dave Brown", avatar: "DB" },
-                            dueDate: "Dec 23",
+                            dueDate: "2024-12-23T00:00:00Z",
                         },
                     ]);
 
@@ -139,6 +147,16 @@ function ProjectDetail() {
         return tasks.filter((task) => task.status === status);
     };
 
+    const getStatusDisplay = (status) => {
+        const displayMap = {
+            todo: "To Do",
+            in_progress: "In Progress",
+            review: "Review",
+            done: "Done",
+        };
+        return displayMap[status] || status;
+    };
+
     const getPriorityColor = (priority) => {
         const colors = {
             High: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
@@ -156,13 +174,6 @@ function ProjectDetail() {
             Story: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
         };
         return colors[type] || colors.Feature;
-    };
-
-    const getDateColor = (date) => {
-        if (date === "Due Soon") {
-            return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700";
-        }
-        return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
     };
 
     if (loading) {
@@ -197,7 +208,7 @@ function ProjectDetail() {
             <div className="mb-6">
                 <button
                     onClick={() => navigate("/projects")}
-                    className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4 transition"
+                    className="flex items-center gap-2 text-primary dark:text-primary hover:text-primary/80 dark:hover:text-primary/80 mb-4 transition"
                 >
                     <ChevronLeft size={20} />
                     Back to Projects
@@ -266,7 +277,7 @@ function ProjectDetail() {
                                 Timeline
                             </h3>
                         </div>
-                        <span className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg">
+                        <span className="px-3 py-1 bg-primary text-white text-xs font-medium rounded-lg">
                             Active
                         </span>
                     </div>
@@ -301,7 +312,7 @@ function ProjectDetail() {
                             </div>
                             <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                                 <div
-                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    className="bg-primary h-2 rounded-full transition-all"
                                     style={{
                                         width: `${project.progress || 67}%`,
                                     }}
@@ -367,50 +378,37 @@ function ProjectDetail() {
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                         Issues ({tasks.length})
                     </h3>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition">
                         <Plus size={16} />
                         Create Issues
                     </button>
                 </div>
 
                 {/* Filters and Search */}
-                <div className="flex gap-3 mb-4 flex-wrap">
-                    <div className="flex-1 min-w-[200px] flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg">
-                        <Search size={16} className="text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search tasks..."
-                            className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 flex-1"
-                        />
-                    </div>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-                        All Sprints
-                        <ChevronDown size={14} />
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-                        All Status
-                        <ChevronDown size={14} />
-                    </button>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-                        All Assignees
-                        <ChevronDown size={14} />
-                    </button>
-                </div>
+                <TaskFilterBar
+                    searchTerm={taskFilter.searchTerm}
+                    filters={taskFilter.filters}
+                    sortOrder={taskFilter.sortOrder}
+                    openFilter={taskFilter.openFilter}
+                    setSearchTerm={taskFilter.setSearchTerm}
+                    handleFilterChange={taskFilter.handleFilterChange}
+                    setOpenFilter={taskFilter.setOpenFilter}
+                    getUniqueSprints={taskFilter.getUniqueSprints}
+                    getUniqueStatuses={taskFilter.getUniqueStatuses}
+                    getUniqueAssignees={taskFilter.getUniqueAssignees}
+                    toggleSortOrder={taskFilter.toggleSortOrder}
+                    getStatusDisplay={getStatusDisplay}
+                />
 
                 {/* Kanban Board */}
                 <div className="overflow-x-auto">
                     <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
-                        {["To Do", "In Progress", "Review", "Done"].map(
+                        {["todo", "in_progress", "review", "done"].map(
                             (status) => {
-                                const statusTasks = getTasksByStatus(
-                                    status === "To Do"
-                                        ? "todo"
-                                        : status === "In Progress"
-                                        ? "in_progress"
-                                        : status === "Review"
-                                        ? "review"
-                                        : "done"
-                                );
+                                const statusTasks =
+                                    taskFilter.filteredAndSortedTasks.filter(
+                                        (task) => task.status === status
+                                    );
 
                                 return (
                                     <div
@@ -419,7 +417,7 @@ function ProjectDetail() {
                                     >
                                         <div className="flex items-center justify-between mb-2">
                                             <h4 className="font-medium text-slate-900 dark:text-white text-sm">
-                                                {status}
+                                                {getStatusDisplay(status)}
                                             </h4>
                                             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
                                                 {statusTasks.length}
@@ -472,11 +470,13 @@ function ProjectDetail() {
                                                                 ?.avatar || "U"}
                                                         </div>
                                                         <span
-                                                            className={`px-2 py-1 text-xs font-medium rounded-md border ${getDateColor(
+                                                            className={`px-2 py-1 text-xs font-medium rounded-md border ${taskFilter.getDateColor(
                                                                 task.dueDate
                                                             )}`}
                                                         >
-                                                            {task.dueDate}
+                                                            {taskFilter.formatDateDisplay(
+                                                                task.dueDate
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -508,13 +508,13 @@ function ProjectDetail() {
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment..."
-                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mb-3"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary mb-3"
                         rows={3}
                     />
                     <div className="flex justify-end">
                         <button
                             onClick={handleCommentSubmit}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
                             disabled={!newComment.trim()}
                         >
                             <Send size={14} />
