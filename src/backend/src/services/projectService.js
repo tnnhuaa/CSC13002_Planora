@@ -1,41 +1,45 @@
 import { projectRepository } from "../repositories/projectRepository.js";
 
 class ProjectService {
-    async create(projectData) {
-        const { title, manager } = projectData;
+  async create(projectData) {
+    const { title, manager } = projectData;
 
-        // Validate
-        if (!title || title.trim() === '') {
-            throw new Error('Title is required!');
-        }
-
-        if (!manager) {
-            throw new Error('Manager identifying failed!');
-        }
-
-        return await projectRepository.create(projectData);     
+    // Validate
+    if (!title || title.trim() === "") {
+      throw new Error("Title is required!");
     }
 
-    async getAllProject() {
-        return await projectRepository.findAll();
+    if (!manager) {
+      throw new Error("Manager identifying failed!");
     }
 
-    async getProjectById(projectId) {
-        return await projectRepository.findById(projectId);
-    }
+    return await projectRepository.create(projectData);
+  }
 
-    async getProjectByUser(userId, role) {
-        if (role === 'project manager') {
-            return await projectRepository.findByManager(userId);
-        }
-        else if (role === 'assignee') {
-            return await projectRepository.findByAssignee(userId);
-        }
-    }
+  async getAllProject() {
+    return await projectRepository.findAll();
+  }
 
-    async deleteProject(projectId) {
-        return await projectRepository.delete(projectId);
+  async getProjectById(projectId) {
+    return await projectRepository.findById(projectId);
+  }
+
+  async getProjectByUser(userId) {
+    return await projectRepository.findInvolved(userId);
+  }
+
+  async getProjectsByRole(userId, type) {
+    if (type === "manager") {
+      return await projectRepository.findByManager(userId);
+    } else if (type === "member") {
+      return await projectRepository.findByMember(userId);
     }
+    return [];
+  }
+
+  async deleteProject(projectId) {
+    return await projectRepository.delete(projectId);
+  }
 }
 
 export const projectService = new ProjectService();
