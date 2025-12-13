@@ -167,7 +167,7 @@ class ProjectService {
     const issues = await issueRepository.findByProjects(projectId);
 
     // Progress (done/total)
-    const doneCount = issues.filter(issue => issue.status === "done").length;
+    const doneCount = issues.filter((issue) => issue.status === "done").length;
     const totalCount = issues.length;
     const progress = totalCount === 0 ? 0 : (doneCount / totalCount) * 100;
 
@@ -215,9 +215,7 @@ class ProjectService {
         if (!pm.project) {
           return null;
         }
-        const project = await projectRepository.findProjectById(
-          pm.project._id
-        );
+        const project = await projectRepository.findProjectById(pm.project._id);
         // Fetch members for each project
         const members = await projectMembersRepository.findMembersByProject(
           pm.project._id
@@ -226,7 +224,9 @@ class ProjectService {
 
         // Progress (done/total)
         const issues = await issueRepository.findByProjects(project._id);
-        const doneCount = issues.filter(issue => issue.status === "done").length;
+        const doneCount = issues.filter(
+          (issue) => issue.status === "done"
+        ).length;
         const totalCount = issues.length;
         const progress = totalCount === 0 ? 0 : (doneCount / totalCount) * 100;
 

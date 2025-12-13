@@ -48,7 +48,11 @@ class ProjectController {
       const { userId } = req.body;
       const requesterId = req.user.id;
 
-      await projectService.removeMemberFromProject(projectId, userId, requesterId);
+      await projectService.removeMemberFromProject(
+        projectId,
+        userId,
+        requesterId
+      );
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: error.message });

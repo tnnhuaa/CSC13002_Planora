@@ -118,10 +118,7 @@ function ProjectDetail() {
 
   const addMember = (userId) => {
     if (!selectedMembers.some((member) => member.userId === userId)) {
-      setSelectedMembers((prev) => [
-        ...prev,
-        { userId, role: "member" },
-      ]);
+      setSelectedMembers((prev) => [...prev, { userId, role: "member" }]);
     }
     setSearchQuery("");
   };
@@ -221,12 +218,15 @@ function ProjectDetail() {
 
   const getRoleColor = (role) => {
     const colors = {
-      manager: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
-      member: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
-      viewer: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600",
+      manager:
+        "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
+      member:
+        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      viewer:
+        "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600",
     };
     return colors[role] || colors.Member;
-  }
+  };
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
@@ -314,11 +314,19 @@ function ProjectDetail() {
                   Start Date
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : "01/01/2025"}
+                  {project.createdAt
+                    ? new Date(project.createdAt).toLocaleDateString()
+                    : "01/01/2025"}
                 </p>
               </div>
               <div className="text-right">
-                <p className={`text-sm font-medium ${project.endDate ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500 italic'}`}>
+                <p
+                  className={`text-sm font-medium ${
+                    project.endDate
+                      ? "text-slate-900 dark:text-white"
+                      : "text-slate-400 dark:text-slate-500 italic"
+                  }`}
+                >
                   Ongoing
                 </p>
               </div>
@@ -389,7 +397,11 @@ function ProjectDetail() {
                     <span className="text-sm text-slate-900 dark:text-white">
                       {member.user?.username}
                     </span>
-                    <span className={`ml-auto px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(member.role)}`}>
+                    <span
+                      className={`ml-auto px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(
+                        member.role
+                      )}`}
+                    >
                       {member.role || "Member"}
                     </span>
                   </div>
@@ -502,7 +514,9 @@ function ProjectDetail() {
                               ),
                             }}
                           >
-                            {getAvatarInitial(issue.assignee?.username || "Unknown")}
+                            {getAvatarInitial(
+                              issue.assignee?.username || "Unknown"
+                            )}
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getDateColor(

@@ -107,28 +107,31 @@ function Projects() {
   const filteredAssignees = assignees.filter((user) => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return false;
-    
+
     const username = (user.username || "").toLowerCase();
     const email = (user.email || "").toLowerCase();
 
     // Ignore already selected members
-    if (formData.members.some(member => member.userId === user._id)) return false;
+    if (formData.members.some((member) => member.userId === user._id))
+      return false;
 
     // Ignore if user is a current user
     if (currentUser && user._id === currentUser._id) return false;
-    
+
     return username.includes(query) || email.includes(query);
   });
 
   // Get selected members details with role
-  const selectedMembers = formData.members.map((member) => {
-    const user = assignees.find((u) => u._id === member.userId);
-    return user ? { ...user, role: member.role } : null;
-  }).filter(Boolean);
+  const selectedMembers = formData.members
+    .map((member) => {
+      const user = assignees.find((u) => u._id === member.userId);
+      return user ? { ...user, role: member.role } : null;
+    })
+    .filter(Boolean);
 
   // Add member to selection with default role
   const addMember = (userId) => {
-    if (!formData.members.some(member => member.userId === userId)) {
+    if (!formData.members.some((member) => member.userId === userId)) {
       setFormData((prev) => ({
         ...prev,
         members: [...prev.members, { userId, role: "member" }],
@@ -438,7 +441,9 @@ function Projects() {
                             {user.email}
                           </span>
                         </div>
-                        {formData.members.some(member => member.userId === user._id) && (
+                        {formData.members.some(
+                          (member) => member.userId === user._id
+                        ) && (
                           <CheckCircle
                             size={16}
                             className="text-green-600 flex-shrink-0"
@@ -480,7 +485,9 @@ function Projects() {
                           </div>
                           <select
                             value={user.role}
-                            onChange={(e) => updateMemberRole(user._id, e.target.value)}
+                            onChange={(e) =>
+                              updateMemberRole(user._id, e.target.value)
+                            }
                             className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-600 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           >
                             <option value="manager">Manager</option>
@@ -492,7 +499,10 @@ function Projects() {
                             onClick={() => removeMember(user._id)}
                             className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           >
-                            <X size={16} className="text-red-600 dark:text-red-400" />
+                            <X
+                              size={16}
+                              className="text-red-600 dark:text-red-400"
+                            />
                           </button>
                         </div>
                       ))}
