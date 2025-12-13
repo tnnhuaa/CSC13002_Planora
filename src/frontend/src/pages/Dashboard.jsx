@@ -78,7 +78,7 @@ const TaskCard = ({
                     {assignees?.map((initials, idx) => (
                         <div
                             key={idx}
-                            className="w-6 h-6 bg-blue-600 rounded-full border border-white dark:border-slate-700 flex items-center justify-center text-xs text-white font-medium"
+                            className="w-6 h-6 bg-primary rounded-full border border-white dark:border-slate-700 flex items-center justify-center text-xs text-white font-medium"
                         >
                             {initials}
                         </div>
@@ -103,7 +103,7 @@ const StatCard = ({ icon: Icon, title, value, trend, isPositive }) => (
                 {title}
             </p>
             <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl">
-                <Icon size={18} className="text-blue-600 dark:text-blue-400" />
+                <Icon size={18} className="text-primary dark:text-blue-400" />
             </div>
         </div>
         <p className="text-3xl font-medium text-slate-900 dark:text-white mb-1">
@@ -197,7 +197,7 @@ export default function Dashboard() {
                 </div>
                 <button
                     onClick={() => handleAddTaskClick("To Do")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors w-full md:w-auto flex items-center justify-center gap-2"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors w-full md:w-auto flex items-center justify-center gap-2"
                 >
                     <Plus size={16} />
                     Create Task

@@ -114,7 +114,7 @@ function Projects() {
                             currentUser.role === "admin") && (
                             <button
                                 onClick={() => setIsModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg transition"
                             >
                                 <Plus size={20} />
                                 Create Project
@@ -214,7 +214,7 @@ function Projects() {
                                 </div>
                                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                                     <div
-                                        className="bg-blue-600 h-2 rounded-full transition-all"
+                                        className="bg-primary h-2 rounded-full transition-all"
                                         style={{
                                             width: `${project.progress}%`,
                                         }}
@@ -401,7 +401,7 @@ function Projects() {
                                                                 }
                                                             );
                                                         }}
-                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary dark:focus:ring-primary dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                                     />
                                                     <div className="text-sm">
                                                         <span className="font-medium text-slate-700 dark:text-slate-200">

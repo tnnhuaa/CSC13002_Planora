@@ -151,7 +151,7 @@ function Tasks() {
                     {currentUser && (currentUser.role === 'project manager' || currentUser.role === 'admin') && (
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition"
                         >
                             <Plus size={20} />
                             Create Task
@@ -379,7 +379,7 @@ function Tasks() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium"
                                 >
                                     Create Task
                                 </button>
