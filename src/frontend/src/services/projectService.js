@@ -60,4 +60,16 @@ export const projectService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  addMemberToProject: async (projectId, memberData) => {
+    try {
+      const response = await axiosInstance.post(
+        `${BASE_URL}/${projectId}/members`,
+        memberData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
