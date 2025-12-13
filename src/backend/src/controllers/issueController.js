@@ -8,7 +8,10 @@ class IssueController {
       const { project: projectId } = req.body;
 
       // Only project managers can create issues for their projects
-      const project = await projectService.getProjectById(projectId);
+      const project = await projectService.getProjectById(
+        projectId,
+        reporterId
+      );
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
@@ -82,6 +85,7 @@ class IssueController {
         (member) => member._id.toString() === userId.toString()
       );
 
+      console.log({ isProjectManager, isProjectMember });
       if (role === "admin") {
         const issues = await issueService.getIssuesByProject(projectId);
         return res.status(200).json({
