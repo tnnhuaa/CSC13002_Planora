@@ -1,4 +1,4 @@
-import { projectService } from '../services/projectService.js';
+import { projectService } from "../services/projectService.js";
 
 class ProjectController {
     async create(req, res) {
@@ -42,6 +42,23 @@ class ProjectController {
             res.status(500).json({ message: error.message });
         }
     }
+  }
+
+  async addMember(req, res) {
+    try {
+      const { projectId } = req.params;
+      const { userId, role } = req.body;
+
+      const member = await projectService.addMemberToProject(
+        projectId,
+        userId,
+        role
+      );
+      res.status(201).json(member);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 
     async removeMember(req, res) {
         try {
@@ -66,6 +83,13 @@ class ProjectController {
             res.status(500).json({ message: error.message });
         }
     }
+  }
+
+  async getUserProjects(req, res) {
+    try {
+      const userId = req.user._id || req.user.id;
+
+      const projects = await projectService.getUserProjects(userId);
 
     async getProjectDetails(req, res) {
         try {
@@ -88,6 +112,7 @@ class ProjectController {
             res.status(500).json({ message: error.message });
         }
     }
+  }
 }
 
 export const projectController = new ProjectController();

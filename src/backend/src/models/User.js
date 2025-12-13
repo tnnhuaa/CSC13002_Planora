@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["viewer", "assignee", "project manager", "admin"],
-      default: "viewer",
+      enum: ["user", "admin"],
+      default: "user",
     },
   },
   {

@@ -1,6 +1,6 @@
 import express from "express";
 
-import { projectController } from '../controllers/projectController.js';
+import { projectController } from "../controllers/projectController.js";
 
 import { protectedRoute, authorize } from "../middleware/authMiddleware.js";
 
@@ -28,5 +28,22 @@ router.put('/:projectId/members/role', protectedRoute, projectController.changeM
 
 // Get project details
 router.get('/:projectId', protectedRoute, projectController.getProjectDetails);
+
+// Remove Member ('manager' only)
+router.delete(
+  "/:projectId/members",
+  protectedRoute,
+  projectController.removeMember
+);
+
+// Change Member Role ('manager' only)
+router.put(
+  "/:projectId/members/role",
+  protectedRoute,
+  projectController.changeMemberRole
+);
+
+// Get project details
+router.get("/:projectId", protectedRoute, projectController.getProjectDetails);
 
 export default router;

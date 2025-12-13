@@ -11,135 +11,122 @@ import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
-import Tasks from "./pages/Task";
+import Issues from "./pages/Issue";
 
 const COLOR_MAP = {
-    Blue: "#2563eb", // blue-600
-    Purple: "#9333ea", // purple-600
-    Green: "#16a34a", // green-600
-    Orange: "#f97316", // orange-500
-    Pink: "#ec4899", // pink-500
+  Blue: "#2563eb", // blue-600
+  Purple: "#9333ea", // purple-600
+  Green: "#16a34a", // green-600
+  Orange: "#f97316", // orange-500
+  Pink: "#ec4899", // pink-500
 };
 
 function App() {
-    useEffect(() => {
-        const savedSettings = localStorage.getItem("appSettings");
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("appSettings");
 
-        if (savedSettings) {
-            const { darkMode, accentColor } = JSON.parse(savedSettings);
+    if (savedSettings) {
+      const { darkMode, accentColor } = JSON.parse(savedSettings);
 
-            // A. Xử lý Dark Mode
-            if (darkMode) {
-                document.documentElement.classList.add("dark");
-            } else {
-                document.documentElement.classList.remove("dark");
-            }
+      // A. Xử lý Dark Mode
+      if (darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
 
-            // B. Xử lý Accent Color (Màu chủ đạo)
-            const colorHex = COLOR_MAP[accentColor] || COLOR_MAP.Blue;
-            // Gán giá trị màu vào biến CSS --primary
-            document.documentElement.style.setProperty("--primary", colorHex);
-        } else {
-            // Mặc định là Blue nếu chưa cài đặt
-            document.documentElement.style.setProperty(
-                "--primary",
-                COLOR_MAP.Blue
-            );
-        }
-    }, []); // Chạy 1 lần khi web load
+      // B. Xử lý Accent Color (Màu chủ đạo)
+      const colorHex = COLOR_MAP[accentColor] || COLOR_MAP.Blue;
+      // Gán giá trị màu vào biến CSS --primary
+      document.documentElement.style.setProperty("--primary", colorHex);
+    } else {
+      // Mặc định là Blue nếu chưa cài đặt
+      document.documentElement.style.setProperty("--primary", COLOR_MAP.Blue);
+    }
+  }, []); // Chạy 1 lần khi web load
 
-    return (
-        <HashRouter>
-            <Routes>
-                {/* Public */}
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+  return (
+    <HashRouter>
+      <Routes>
+        {/* Public */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                {/* Private */}
-                <Route element={<LoginConfirm />}>
-                    <Route element={<Layout />}>
-                        {/* Default: Dashboard */}
-                        <Route
-                            path="/"
-                            element={<Navigate to="/dashboard" replace />}
-                        />
-                        {/* Dashboard */}
-                        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Private */}
+        <Route element={<LoginConfirm />}>
+          <Route element={<Layout />}>
+            {/* Default: Dashboard */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Dashboard */}
+            <Route path="/dashboard" element={<Dashboard />} />
 
-                        {/* Profile */}
-                        <Route path="/profile" element={<Profile />} />
+            {/* Profile */}
+            <Route path="/profile" element={<Profile />} />
 
-                        {/* TODO: Thiết kế xong chuyển element thành giống Dashboard */}
+            {/* TODO: Thiết kế xong chuyển element thành giống Dashboard */}
 
-                        {/* Other pages */}
-                        <Route
-                            path="/team"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Team
-                                </div>
-                            }
-                        />
-                        <Route
-                            path="/users"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Users
-                                </div>
-                            }
-                        />
-                        <Route path="/projects" element={<Projects />} />
-                        <Route
-                            path="/projects/:projectId"
-                            element={<ProjectDetail />}
-                        />
-                        <Route
-                            path="/backlog"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Backlog
-                                </div>
-                            }
-                        />
-                        <Route
-                            path="/sprints"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Sprints
-                                </div>
-                            }
-                        />
-                        <Route path="/tasks" element={<Tasks />} />
-                        <Route
-                            path="/work_log"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Worklog
-                                </div>
-                            }
-                        />
-                        <Route
-                            path="/risks"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang Risk
-                                </div>
-                            }
-                        />
-                        <Route
-                            path="/settings"
-                            element={
-                                <div className="text-slate-800 dark:text-white">
-                                    Trang settings
-                                </div>
-                            }
-                        />
-                    </Route>
-                </Route>
-            </Routes>
-        </HashRouter>
-    );
+            {/* Other pages */}
+            <Route
+              path="/team"
+              element={
+                <div className="text-slate-800 dark:text-white">Trang Team</div>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <div className="text-slate-800 dark:text-white">
+                  Trang Users
+                </div>
+              }
+            />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route
+              path="/backlog"
+              element={
+                <div className="text-slate-800 dark:text-white">
+                  Trang Backlog
+                </div>
+              }
+            />
+            <Route
+              path="/sprints"
+              element={
+                <div className="text-slate-800 dark:text-white">
+                  Trang Sprints
+                </div>
+              }
+            />
+            <Route path="/issues" element={<Issues />} />
+            <Route
+              path="/work_log"
+              element={
+                <div className="text-slate-800 dark:text-white">
+                  Trang Worklog
+                </div>
+              }
+            />
+            <Route
+              path="/risks"
+              element={
+                <div className="text-slate-800 dark:text-white">Trang Risk</div>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <div className="text-slate-800 dark:text-white">
+                  Trang settings
+                </div>
+              }
+            />
+          </Route>
+        </Route>
+      </Routes>
+    </HashRouter>
+  );
 }
 
 export default App;

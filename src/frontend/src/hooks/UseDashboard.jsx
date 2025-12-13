@@ -1,158 +1,249 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { issueService } from "../services/issueService";
 
 export const useDashboard = () => {
-    const [activeTab, setActiveTab] = useState("kanban");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
-    const [selectedColumn, setSelectedColumn] = useState(null);
-    const [draggedTask, setDraggedTask] = useState(null);
-    const [draggedFromColumn, setDraggedFromColumn] = useState(null);
+  const [activeTab, setActiveTab] = useState("kanban");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddIssueModalOpen, setIsAddIssueModalOpen] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState(null);
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [draggedFromColumn, setDraggedFromColumn] = useState(null);
+  const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
+  const [issueToEdit, setIssueToEdit] = useState(null);
 
-    // Mock data for tasks in each column
-    const [tasks, setTasks] = useState({
-        "To Do": [
-            {
-                taskId: "PLA-14",
-                title: "Update user documentation",
-                priority: "Low",
-                type: "Story",
-                assignees: ["CW", "DL"],
-                dueDate: "Nov 29",
-            },
-        ],
-        "In Progress": [
-            {
-                taskId: "PLA-12",
-                title: "Design new landing page for product launch",
-                priority: "High",
-                type: "Feature",
-                assignees: ["AJ", "BS"],
-                dueDate: "Due Soon",
-            },
-            {
-                taskId: "PLA-13",
-                title: "Fix login authentication bug",
-                priority: "High",
-                type: "Bug",
-                assignees: ["BS"],
-                dueDate: "Due Soon",
-            },
-        ],
+  // Mock data for issues in each column
+  const [issues, setIssues] = useState({
+    "To Do": [],
+    "In Progress": [],
+    Review: [],
+    Done: [],
+  });
+
+  const mapStatusToColumn = (status) => {
+    switch (status) {
+      case "in_progress":
+        return "In Progress";
+      case "review":
+        return "Review";
+      case "done":
+        return "Done";
+      default:
+        return "To Do"; // todo
+    }
+  };
+
+  const mapColumnToStatus = (column) => {
+    switch (column) {
+      case "In Progress":
+        return "in_progress";
+      case "Review":
+        return "review";
+      case "Done":
+        return "done";
+      default:
+        return "todo";
+    }
+  };
+
+  const fetchIssues = async () => {
+    try {
+      const data = await issueService.getIssues();
+      // Giả sử data trả về là mảng các issues: [{ _id, title, status: 'todo', ... }]
+
+      const newIssues = {
+        "To Do": [],
+        "In Progress": [],
         Review: [],
         Done: [],
+      };
+
+      data.forEach((issue) => {
+        const column = mapStatusToColumn(issue.status);
+        if (newIssues[column]) {
+          newIssues[column].push({
+            ...issue,
+            issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
+            // Đảm bảo các trường khác khớp
+            dueDate: issue.dueDate
+              ? new Date(issue.dueDate).toLocaleDateString()
+              : "",
+          });
+        }
+      });
+
+      setIssues(newIssues);
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
+  const handleAddIssueClick = (column) => {
+    setSelectedColumn(column);
+    setIsAddIssueModalOpen(true);
+  };
+
+  const handleCreateIssue = async (formData) => {
+    try {
+      const payload = {
+        ...formData,
+        status: mapColumnToStatus(formData.column || selectedColumn),
+      };
+
+      const newIssue = await issueService.createIssue(payload);
+
+      const column = mapStatusToColumn(newIssue.status);
+      const formattedIssue = {
+        ...newIssue,
+        issueId: newIssue._id,
+        dueDate: newIssue.dueDate
+          ? new Date(newIssue.dueDate).toLocaleDateString()
+          : "",
+      };
+
+      setIssues((prev) => ({
+        ...prev,
+        [column]: [formattedIssue, ...prev[column]],
+      }));
+    } catch (error) {
+      console.error("Failed to create issue:", error);
+      alert("Failed to create issue. Please check if Project is selected.");
+    }
+  };
+
+  const handleDragStart = (e, issue, column) => {
+    const issueWithStatus = { ...issue, status: column };
+    setDraggedIssue(issue);
+    setDraggedFromColumn(column);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, targetColumn) => {
+    e.preventDefault();
+
+    if (
+      !draggedIssue ||
+      !draggedFromColumn ||
+      draggedFromColumn === targetColumn
+    ) {
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+      return;
+    }
+
+    // If dropping in the same column, do nothing
+    if (draggedFromColumn === targetColumn) {
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+      return;
+    }
+
+    // Move issue from source column to target column
+    setIssues((prev) => ({
+      ...prev,
+      [draggedFromColumn]: prev[draggedFromColumn].filter(
+        (issue) => issue.issueId !== draggedIssue.issueId
+      ),
+      [targetColumn]: [
+        { ...draggedIssue, status: mapColumnToStatus(targetColumn) }, // Update status trong object
+        ...prev[targetColumn],
+      ],
+    }));
+
+    // Call API to update status of issue
+    try {
+      await issueService.updateIssue(draggedIssue.issueId, {
+        status: mapColumnToStatus(targetColumn),
+      });
+    } catch (error) {
+      console.error("Error updating issue status:", error);
+      // Nếu lỗi, nên revert lại UI (Optional: fetchIssues() lại)
+      fetchIssues();
+    }
+
+    setDraggedIssue(null);
+    setDraggedFromColumn(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIssue(null);
+    setDraggedFromColumn(null);
+  };
+
+  const getFilteredIssues = () => {
+    if (!searchQuery.trim()) {
+      return issues;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filteredIssues = {};
+
+    Object.keys(issues).forEach((column) => {
+      filteredIssues[column] = issues[column].filter((issue) => {
+        const titleMatch = issue.title.toLowerCase().includes(query);
+        const issueIdMatch = issue.issueId.toLowerCase().includes(query);
+        const typeMatch = issue.type?.toLowerCase().includes(query);
+        const priorityMatch = issue.priority?.toLowerCase().includes(query);
+
+        return titleMatch || issueIdMatch || typeMatch || priorityMatch;
+      });
     });
 
-    const handleAddTaskClick = (column) => {
-        setSelectedColumn(column);
-        setIsAddTaskModalOpen(true);
-    };
+    return filteredIssues;
+  };
 
-    const handleCreateTask = (newTask) => {
-        const taskId = `PLA-${Math.floor(Math.random() * 1000)}`;
-        const columnName = newTask.column;
-        setTasks((prev) => ({
-            ...prev,
-            [columnName]: [
-                ...prev[columnName],
-                {
-                    taskId,
-                    title: newTask.title,
-                    description: newTask.description,
-                    priority: newTask.priority,
-                    type: newTask.type,
-                    assignees: [],
-                    dueDate: new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                    }),
-                },
-            ],
-        }));
-    };
+  const handleEditIssueClick = useCallback((issue) => {
+    setIssueToEdit(issue);
+    setIsEditIssueModalOpen(true);
+  }, []);
 
-    const handleDragStart = (e, task, column) => {
-        setDraggedTask(task);
-        setDraggedFromColumn(column);
-        e.dataTransfer.effectAllowed = "move";
-    };
+  const handleUpdateIssue = useCallback(async (updatedData) => {
+    const { _id, issueId } = updatedData;
+    const idToUpdate = _id || issueId;
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-    };
+    try {
+      const result = await issueService.updateIssue(idToUpdate, updatedData);
 
-    const handleDrop = (e, targetColumn) => {
-        e.preventDefault();
+      fetchIssues();
+    } catch (error) {
+      console.error("Error updating issue:", error);
+    } finally {
+      setIsEditIssueModalOpen(false);
+      setIssueToEdit(null);
+    }
+  }, []);
 
-        if (!draggedTask || !draggedFromColumn) return;
-
-        // If dropping in the same column, do nothing
-        if (draggedFromColumn === targetColumn) {
-            setDraggedTask(null);
-            setDraggedFromColumn(null);
-            return;
-        }
-
-        // Move task from source column to target column
-        setTasks((prev) => ({
-            ...prev,
-            [draggedFromColumn]: prev[draggedFromColumn].filter(
-                (task) => task.taskId !== draggedTask.taskId
-            ),
-            [targetColumn]: [...prev[targetColumn], draggedTask],
-        }));
-
-        setDraggedTask(null);
-        setDraggedFromColumn(null);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedTask(null);
-        setDraggedFromColumn(null);
-    };
-
-    const getFilteredTasks = () => {
-        if (!searchQuery.trim()) {
-            return tasks;
-        }
-
-        const query = searchQuery.toLowerCase();
-        const filteredTasks = {};
-
-        Object.keys(tasks).forEach((column) => {
-            filteredTasks[column] = tasks[column].filter((task) => {
-                const titleMatch = task.title.toLowerCase().includes(query);
-                const taskIdMatch = task.taskId.toLowerCase().includes(query);
-                const typeMatch = task.type?.toLowerCase().includes(query);
-                const priorityMatch = task.priority
-                    ?.toLowerCase()
-                    .includes(query);
-
-                return titleMatch || taskIdMatch || typeMatch || priorityMatch;
-            });
-        });
-
-        return filteredTasks;
-    };
-
-    return {
-        activeTab,
-        setActiveTab,
-        searchQuery,
-        setSearchQuery,
-        isAddTaskModalOpen,
-        setIsAddTaskModalOpen,
-        selectedColumn,
-        setSelectedColumn,
-        tasks,
-        setTasks,
-        handleAddTaskClick,
-        handleCreateTask,
-        handleDragStart,
-        handleDragOver,
-        handleDrop,
-        handleDragEnd,
-        draggedTask,
-        getFilteredTasks,
-    };
+  return {
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    isAddIssueModalOpen,
+    setIsAddIssueModalOpen,
+    isEditIssueModalOpen,
+    setIsEditIssueModalOpen,
+    issueToEdit,
+    handleEditIssueClick,
+    handleUpdateIssue,
+    selectedColumn,
+    setSelectedColumn,
+    issues,
+    setIssues,
+    handleAddIssueClick,
+    handleCreateIssue,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+    draggedIssue,
+    getFilteredIssues,
+  };
 };
