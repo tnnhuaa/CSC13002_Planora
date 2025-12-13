@@ -1,102 +1,91 @@
 import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
-import Issue from "../models/Issue.js";
-import mongoose from "mongoose";
+
 class ProjectService {
-  async createProject(data, managerId) {
-    try {
-      const { members, ...restData } = data;
-      const projectData = { ...restData, manager: managerId };
+    async createProject(data, managerId) {
+        const projectData = { ...data, manager: managerId };
+        const project = await projectRepository.createProject(projectData);
+        await projectMembersRepository.addMember(project._id, managerId, 'manager');
+        return project;
+    }
 
-      const project = await projectRepository.createProject(projectData);
-      console.log("✅ (1) Created Project:", project._id);
+    async getProjectMembers(projectId) {
+        return await projectMembersRepository.findMembersByProject(projectId);
+    }
 
-      await projectMembersRepository.addMember(
-        project._id,
-        managerId,
-        "manager"
-      );
-      console.log("✅ (2) Added Manager:", managerId);
+    async addMemberToProject(projectId, userId, role) {
+        // Validate role
+        const validRoles = ['manager', 'member', 'viewer'];
+        if (!validRoles.includes(role)) {
+            throw new Error('Invalid role specified');
+        }
 
-      if (members && Array.isArray(members) && members.length > 0) {
-        const managerIdStr = String(managerId);
+        // Validate if member already exists
+        const exists = await projectMembersRepository.existsMember(projectId, userId);
+        if (exists) {
+            throw new Error('User is already a member of the project');
+        }
 
-        await Promise.all(
-          members.map(async (member) => {
-            const memberIdStr = String(member.userId);
-
-            if (memberIdStr === managerIdStr) {
-              return;
-            }
-
-            try {
-              await projectMembersRepository.addMember(
-                project._id,
-                member.userId,
-                member.role || "member"
-              );
-              console.log("   -> Added Member:", member.userId);
-            } catch (innerError) {
-              if (
-                innerError.message &&
-                innerError.message.includes("already")
-              ) {
-                console.warn(
-                  `   ⚠️ Skipped duplicate member: ${member.userId}`
-                );
-              } else {
-                throw innerError;
-              }
-            }
-          })
-        );
-      }
-
-      return project;
-    } catch (error) {
-      console.error("❌ Transaction Failed:", error.message);
-      await session.abortTransaction();
-      throw error;
+        return await projectMembersRepository.addMember(projectId, userId, role);
     }
   }
 
-  async addMemberToProject(projectId, userId, role) {
-    // Validate role
-    const validRoles = ["manager", "member", "viewer"];
-    if (!validRoles.includes(role)) {
-      throw new Error("Invalid role specified");
+    async removeMemberFromProject(projectId, userId) {
+        // Validate if member exists
+        const exists = await projectMembersRepository.existsMember(projectId, userId);
+        if (!exists) {
+            throw new Error('User is not a member of the project');
+        }
+
+        return await projectMembersRepository.removeMember(projectId, userId);
     }
 
-    // Validate if member already exists
-    const exists = await projectMembersRepository.existsMember(
-      projectId,
-      userId
-    );
-    if (exists) {
-      throw new Error("User is already a member of the project");
+    async changeMemberRole(projectId, userId, newRole) {
+        // Validate role
+        const validRoles = ['manager', 'member', 'viewer'];
+        if (!validRoles.includes(newRole)) {
+            throw new Error('Invalid role specified');
+        }
+
+        // Validate if member exists
+        const exists = await projectMembersRepository.existsMember(projectId, userId);
+        if (!exists) {
+            throw new Error('User is not a member of the project');
+        }
+
+        return await projectMembersRepository.updateMemberRole(projectId, userId, newRole);
     }
 
-    return await projectMembersRepository.addMember(projectId, userId, role);
-  }
+    async getProjectDetails(userId, projectId) {
+        const project = await projectRepository.findProjectById(projectId);
 
-  async removeMemberFromProject(projectId, userId) {
-    // Validate if member exists
-    const exists = await projectMembersRepository.existsMember(
-      projectId,
-      userId
-    );
-    if (!exists) {
-      throw new Error("User is not a member of the project");
+        if (!project) {
+            throw new Error('Project not found');
+        }
+
+        // Check user is a member of the project
+        const isMember = await projectMembersRepository.existsMember(projectId, userId);
+
+        if (!isMember) {
+            throw new Error('User is not a member of the project');
+        }
+
+        // Fetch members
+        const members = await projectMembersRepository.findMembersByProject(projectId);
+
+        return { ...project.toObject(), members };
     }
 
-    return await projectMembersRepository.removeMember(projectId, userId);
-  }
+    async getUserProjects(userId) {
+        const projectMembers = await projectMembersRepository.findProjectsByUser(userId);
 
-  async changeMemberRole(projectId, userId, newRole) {
-    // Validate role
-    const validRoles = ["manager", "member", "viewer"];
-    if (!validRoles.includes(newRole)) {
-      throw new Error("Invalid role specified");
+        const result = await Promise.all(projectMembers.map(async (pm) => {
+            // Fetch members for each project
+            const members = await projectMembersRepository.findMembersByProject(pm.project._id);
+            return { ...pm.project.toObject(), members };
+        }));
+
+        return result;
     }
 
     // Validate if member exists
