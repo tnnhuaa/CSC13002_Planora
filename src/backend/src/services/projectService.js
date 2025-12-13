@@ -1,6 +1,6 @@
 import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
-import Issue from "../models/Issue.js";
+import { issueRepository } from "../repositories/issueRepository.js";
 import mongoose from "mongoose";
 class ProjectService {
   async createProject(data, managerId) {
@@ -60,7 +60,16 @@ class ProjectService {
     }
   }
 
-  async addMemberToProject(projectId, userId, role) {
+  async addMemberToProject(projectId, userId, role, requesterId) {
+    // Check if requester is a manager of the project
+    const requesterRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      requesterId
+    );
+    if (requesterRole !== "manager") {
+      throw new Error("Only managers can add members to the project");
+    }
+
     // Validate role
     const validRoles = ["manager", "member", "viewer"];
     if (!validRoles.includes(role)) {
@@ -79,7 +88,16 @@ class ProjectService {
     return await projectMembersRepository.addMember(projectId, userId, role);
   }
 
-  async removeMemberFromProject(projectId, userId) {
+  async removeMemberFromProject(projectId, userId, requesterId) {
+    // Check if requester is a manager of the project
+    const requesterRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      requesterId
+    );
+    if (requesterRole !== "manager") {
+      throw new Error("Only managers can remove members from the project");
+    }
+
     // Validate if member exists
     const exists = await projectMembersRepository.existsMember(
       projectId,
@@ -92,7 +110,16 @@ class ProjectService {
     return await projectMembersRepository.removeMember(projectId, userId);
   }
 
-  async changeMemberRole(projectId, userId, newRole) {
+  async changeMemberRole(projectId, userId, newRole, requesterId) {
+    // Check if requester is a manager of the project
+    const requesterRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      requesterId
+    );
+    if (requesterRole !== "manager") {
+      throw new Error("Only managers can change member roles");
+    }
+
     // Validate role
     const validRoles = ["manager", "member", "viewer"];
     if (!validRoles.includes(newRole)) {
@@ -137,21 +164,44 @@ class ProjectService {
       projectId
     );
 
-    const issues = await Issue.find({ project: projectId })
-      .populate("assignee", "username email avatar") // Populate để lấy avatar người được giao
-      .sort({ createdAt: -1 }); // Sắp xếp mới nhất lên đầu
+    const issues = await issueRepository.findByProjects(projectId);
 
-    return { ...project.toObject(), members, issues };
+    // Progress (done/total)
+    const doneCount = issues.filter(issue => issue.status === "done").length;
+    const totalCount = issues.length;
+    const progress = totalCount === 0 ? 0 : (doneCount / totalCount) * 100;
+
+    return { ...project.toObject(), members, issues, progress };
   }
 
-  async getProjectsManagedByUser(userId) {
-    return await projectRepository.findProjectsByManager(userId);
+  async getProjectMembers(projectId, userId) {
+    // Check if user is a member of the project
+    const isMember = await projectMembersRepository.existsMember(
+      projectId,
+      userId
+    );
+    if (!isMember) {
+      throw new Error("You are not a member of this project");
+    }
+
+    return await projectMembersRepository.findMembersByProject(projectId);
   }
-  async getProjectById(projectId) {
+
+  async getProjectById(projectId, userId) {
     const project = await projectRepository.findProjectById(projectId);
     if (!project) {
       throw new Error("Project not found");
     }
+
+    // Check if user is a member of the project
+    const isMember = await projectMembersRepository.existsMember(
+      projectId,
+      userId
+    );
+    if (!isMember) {
+      throw new Error("You are not a member of this project");
+    }
+
     return project;
   }
 
@@ -165,15 +215,22 @@ class ProjectService {
         if (!pm.project) {
           return null;
         }
-        const projectWithManager = await projectRepository.findProjectById(
+        const project = await projectRepository.findProjectById(
           pm.project._id
         );
         // Fetch members for each project
         const members = await projectMembersRepository.findMembersByProject(
           pm.project._id
         );
-        if (!projectWithManager) return null;
-        return { ...projectWithManager.toObject(), members };
+        if (!project) return null;
+
+        // Progress (done/total)
+        const issues = await issueRepository.findByProjects(project._id);
+        const doneCount = issues.filter(issue => issue.status === "done").length;
+        const totalCount = issues.length;
+        const progress = totalCount === 0 ? 0 : (doneCount / totalCount) * 100;
+
+        return { ...project.toObject(), members, progress };
       })
     );
 

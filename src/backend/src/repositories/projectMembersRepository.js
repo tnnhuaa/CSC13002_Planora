@@ -34,6 +34,12 @@ class ProjectMembersRepository {
             .populate('project')
             .session(session);
     }
+
+    async getMemberRole(projectId, userId, session = null) {
+        const member = await ProjectMember.findOne({ project: projectId, user: userId })
+            .session(session);
+        return member ? member.role : null;
+    }
 }
 
 export const projectMembersRepository = new ProjectMembersRepository();

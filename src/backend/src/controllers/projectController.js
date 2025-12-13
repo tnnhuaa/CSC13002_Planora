@@ -16,7 +16,8 @@ class ProjectController {
   async getProjectMembers(req, res) {
     try {
       const { projectId } = req.params;
-      const members = await projectService.getProjectMembers(projectId);
+      const userId = req.user.id;
+      const members = await projectService.getProjectMembers(projectId, userId);
       res.status(200).json(members);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -27,11 +28,13 @@ class ProjectController {
     try {
       const { projectId } = req.params;
       const { userId, role } = req.body;
+      const requesterId = req.user.id;
 
       const member = await projectService.addMemberToProject(
         projectId,
         userId,
-        role
+        role,
+        requesterId
       );
       res.status(201).json(member);
     } catch (error) {
@@ -43,8 +46,9 @@ class ProjectController {
     try {
       const { projectId } = req.params;
       const { userId } = req.body;
+      const requesterId = req.user.id;
 
-      await projectService.removeMemberFromProject(projectId, userId);
+      await projectService.removeMemberFromProject(projectId, userId, requesterId);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -55,11 +59,13 @@ class ProjectController {
     try {
       const { projectId } = req.params;
       const { userId, newRole } = req.body;
+      const requesterId = req.user.id;
 
       const updatedMember = await projectService.changeMemberRole(
         projectId,
         userId,
-        newRole
+        newRole,
+        requesterId
       );
       res.status(200).json(updatedMember);
     } catch (error) {
