@@ -10,9 +10,11 @@ import {
   Send,
   X,
   Hash,
+  CheckCircle,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
-import { generateAvatarColor } from "../utils/avatarUtils";
+import { userService } from "../services/userService";
+import { generateAvatarColor, getAvatarInitial } from "../utils/avatarUtils";
 import { issueService } from "../services/issueService";
 import CreateIssue from "../components/CreateIssue";
 
@@ -25,15 +27,23 @@ function ProjectDetail() {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [assignees, setAssignees] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState([]);
   // Fetch project details
   const fetchProjectDetails = async () => {
     try {
-      const res = await projectService.getProjectDetails(projectId);
-      const projectData = res.data || res;
+      const [projectRes, assigneeRes] = await Promise.all([
+        projectService.getProjectDetails(projectId),
+        userService.getAssignee().catch((err) => ({ data: [] })),
+      ]);
+      const projectData = projectRes.data || projectRes;
 
       setProject(projectData);
       setIssues(projectData.issues || []);
       setComments(projectData.comments || []);
+      setAssignees(assigneeRes.data || []);
     } catch (error) {
       console.error("Failed to fetch project details:", error);
     }
@@ -76,6 +86,89 @@ function ProjectDetail() {
       setNewComment("");
       // Todo api
     }
+  };
+
+  // Add member handlers
+  const teamMembers = project?.members || [];
+  const teamMemberIds = teamMembers.map((m) => m.user?._id).filter(Boolean);
+
+  const filteredAssignees = assignees.filter((user) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return false;
+
+    const username = (user.username || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+
+    // Ignore already in team
+    if (teamMemberIds.includes(user._id)) return false;
+
+    // Ignore already selected
+    if (selectedMembers.some((member) => member.userId === user._id))
+      return false;
+
+    return username.includes(query) || email.includes(query);
+  });
+
+  const selectedMembersWithDetails = selectedMembers
+    .map((member) => {
+      const user = assignees.find((u) => u._id === member.userId);
+      return user ? { ...user, role: member.role } : null;
+    })
+    .filter(Boolean);
+
+  const addMember = (userId) => {
+    if (!selectedMembers.some((member) => member.userId === userId)) {
+      setSelectedMembers((prev) => [
+        ...prev,
+        { userId, role: "member" },
+      ]);
+    }
+    setSearchQuery("");
+  };
+
+  const removeMember = (userId) => {
+    setSelectedMembers((prev) =>
+      prev.filter((member) => member.userId !== userId)
+    );
+  };
+
+  const updateMemberRole = (userId, newRole) => {
+    setSelectedMembers((prev) =>
+      prev.map((member) =>
+        member.userId === userId ? { ...member, role: newRole } : member
+      )
+    );
+  };
+
+  const handleAddMemberSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedMembers.length === 0) {
+      alert("Please select at least one member!");
+      return;
+    }
+    try {
+      // Add each member
+      for (const member of selectedMembers) {
+        await projectService.addMemberToProject(projectId, member);
+      }
+
+      // Fetch lại data
+      await fetchProjectDetails();
+
+      // Close modal và reset
+      setIsAddMemberModalOpen(false);
+      setSelectedMembers([]);
+      setSearchQuery("");
+    } catch (error) {
+      console.error("Failed to add members:", error);
+      alert("Failed to add members");
+    }
+  };
+
+  const handleCloseAddMemberModal = () => {
+    setIsAddMemberModalOpen(false);
+    setSelectedMembers([]);
+    setSearchQuery("");
   };
 
   const getIssuesByStatus = (status) => {
@@ -126,7 +219,14 @@ function ProjectDetail() {
     );
   }
 
-  const teamMembers = project.members || [];
+  const getRoleColor = (role) => {
+    const colors = {
+      manager: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
+      member: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      viewer: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600",
+    };
+    return colors[role] || colors.Member;
+  }
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
@@ -214,15 +314,12 @@ function ProjectDetail() {
                   Start Date
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {project.startDate || "Dec 1, 2024"}
+                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : "01/01/2025"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                  End Date
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {project.endDate || "Feb 28, 2025"}
+                <p className={`text-sm font-medium ${project.endDate ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500 italic'}`}>
+                  Ongoing
                 </p>
               </div>
             </div>
@@ -233,14 +330,14 @@ function ProjectDetail() {
                   Overall Progress
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {project.progress || 67}%
+                  {project.progress}%
                 </p>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all"
                   style={{
-                    width: `${project.progress || 67}%`,
+                    width: `${project.progress}%`,
                   }}
                 />
               </div>
@@ -264,14 +361,21 @@ function ProjectDetail() {
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
               Team Members
             </h3>
+            <button
+              onClick={() => setIsAddMemberModalOpen(true)}
+              className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+            >
+              <Plus size={16} />
+              <span>Add member</span>
+            </button>
           </div>
           <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
             <div className="space-y-3">
               {teamMembers.map((member) => {
-                const avatarColor = generateAvatarColor(member.username);
+                const avatarColor = generateAvatarColor(member.user?.username);
                 return (
                   <div
-                    key={member.username}
+                    key={member.user?.username}
                     className="flex items-center gap-3"
                   >
                     <div
@@ -280,10 +384,13 @@ function ProjectDetail() {
                         backgroundColor: avatarColor,
                       }}
                     >
-                      {member.avatar}
+                      {getAvatarInitial(member.user?.username)}
                     </div>
                     <span className="text-sm text-slate-900 dark:text-white">
-                      {member.username}
+                      {member.user?.username}
+                    </span>
+                    <span className={`ml-auto px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(member.role)}`}>
+                      {member.role || "Member"}
                     </span>
                   </div>
                 );
@@ -395,7 +502,7 @@ function ProjectDetail() {
                               ),
                             }}
                           >
-                            {issue.assignee?.avatar || "U"}
+                            {getAvatarInitial(issue.assignee?.username || "Unknown")}
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getDateColor(
@@ -483,8 +590,167 @@ function ProjectDetail() {
         onCreateIssue={handleCreateIssueSubmit}
         projectPropId={projectId} // Quan trọng: Truyền ID để component tự hiểu
         column="todo"
-        members={project.members || []}
+        members={project?.members || []}
       />
+
+      {/* ADD MEMBER MODAL */}
+      {isAddMemberModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
+                  Add Members to Project
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Search and assign team members
+                </p>
+              </div>
+              <button
+                onClick={handleCloseAddMemberModal}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMemberSubmit}>
+              <div className="space-y-4">
+                {/* Search Members */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Search Members
+                  </label>
+
+                  {/* Search Input */}
+                  <div className="relative mb-2">
+                    <Search
+                      size={18}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {searchQuery && filteredAssignees.length > 0 && (
+                    <div className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 max-h-48 overflow-y-auto mb-2 shadow-lg">
+                      {filteredAssignees.map((user) => (
+                        <div
+                          key={user._id}
+                          onClick={() => addMember(user._id)}
+                          className="flex items-center gap-3 p-2 hover:bg-slate-100 dark:hover:bg-slate-600 rounded cursor-pointer transition-colors"
+                        >
+                          <div className="flex-1">
+                            <span className="block font-medium text-slate-700 dark:text-slate-200 text-sm">
+                              {user.username}
+                            </span>
+                            <span className="block text-xs text-slate-500 dark:text-slate-400">
+                              {user.email}
+                            </span>
+                          </div>
+                          {selectedMembers.some(
+                            (member) => member.userId === user._id
+                          ) && (
+                            <CheckCircle
+                              size={16}
+                              className="text-green-600 flex-shrink-0"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No Results Message */}
+                  {searchQuery && filteredAssignees.length === 0 && (
+                    <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 mb-2">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center italic">
+                        No users found matching "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Selected Members Display with Role Selector */}
+                  {selectedMembersWithDetails.length > 0 && (
+                    <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3">
+                        Selected Members ({selectedMembersWithDetails.length})
+                      </p>
+                      <div className="space-y-2">
+                        {selectedMembersWithDetails.map((user) => (
+                          <div
+                            key={user._id}
+                            className="flex items-center gap-3 p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600"
+                          >
+                            <div className="flex-1">
+                              <span className="block font-medium text-slate-700 dark:text-slate-200 text-sm">
+                                {user.username}
+                              </span>
+                              <span className="block text-xs text-slate-500 dark:text-slate-400">
+                                {user.email}
+                              </span>
+                            </div>
+                            <select
+                              value={user.role}
+                              onChange={(e) =>
+                                updateMemberRole(user._id, e.target.value)
+                              }
+                              className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-600 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="manager">Manager</option>
+                              <option value="member">Member</option>
+                              <option value="viewer">Viewer</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => removeMember(user._id)}
+                              className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            >
+                              <X
+                                size={16}
+                                className="text-red-600 dark:text-red-400"
+                              />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {selectedMembersWithDetails.length === 0 && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">
+                      No members selected. Search and click to add members.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleCloseAddMemberModal}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                >
+                  Add Members
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

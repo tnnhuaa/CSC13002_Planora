@@ -7,6 +7,8 @@ import {
   Users,
   Edit2,
   Trash2,
+  Search,
+  X,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -21,6 +23,7 @@ function Projects() {
   const [stats, setStats] = useState({ total: 0, active: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -86,20 +89,70 @@ function Projects() {
     try {
       const payload = {
         ...formData,
-        members: formData.members.map((memberId) => ({
-          userId: memberId,
-          role: "member",
-        })),
+        members: formData.members,
       };
 
       await projectService.createProject(payload);
       setIsModalOpen(false);
       setFormData({ name: "", description: "", members: [] });
+      setSearchQuery("");
 
       await fetchProjects();
     } catch (error) {
       console.error("Failed to create project:", error);
     }
+  };
+
+  // Filter assignees based on search query
+  const filteredAssignees = assignees.filter((user) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return false;
+    
+    const username = (user.username || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+
+    // Ignore already selected members
+    if (formData.members.some(member => member.userId === user._id)) return false;
+
+    // Ignore if user is a current user
+    if (currentUser && user._id === currentUser._id) return false;
+    
+    return username.includes(query) || email.includes(query);
+  });
+
+  // Get selected members details with role
+  const selectedMembers = formData.members.map((member) => {
+    const user = assignees.find((u) => u._id === member.userId);
+    return user ? { ...user, role: member.role } : null;
+  }).filter(Boolean);
+
+  // Add member to selection with default role
+  const addMember = (userId) => {
+    if (!formData.members.some(member => member.userId === userId)) {
+      setFormData((prev) => ({
+        ...prev,
+        members: [...prev.members, { userId, role: "member" }],
+      }));
+    }
+    setSearchQuery(""); // Clear search after adding
+  };
+
+  // Remove member from selection
+  const removeMember = (userId) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.filter((member) => member.userId !== userId),
+    }));
+  };
+
+  // Update member role
+  const updateMemberRole = (userId, newRole) => {
+    setFormData((prev) => ({
+      ...prev,
+      members: prev.members.map((member) =>
+        member.userId === userId ? { ...member, role: newRole } : member
+      ),
+    }));
   };
 
   const handleDelete = async (id) => {
@@ -158,6 +211,7 @@ function Projects() {
               {stats.total}
             </p>
           </div>
+          {/*
           <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
               Active Projects
@@ -174,6 +228,7 @@ function Projects() {
               {stats.completed}
             </p>
           </div>
+          */}
         </div>
 
         {/* Projects Grid */}
@@ -215,7 +270,7 @@ function Projects() {
               </div>
 
               <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded mb-3">
-                {project.status}
+                Active
               </span>
 
               {/* Progress Bar */}
@@ -247,7 +302,9 @@ function Projects() {
                       Start Date
                     </p>
                     <p className="text-sm font-medium text-slate-800 dark:text-white">
-                      {project.startDate}
+                      {project.createdAt
+                        ? new Date(project.createdAt).toLocaleDateString()
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -255,10 +312,10 @@ function Projects() {
                   <CheckCircle size={16} className="text-slate-400" />
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Tasks
+                      Issues
                     </p>
                     <p className="text-sm font-medium text-slate-800 dark:text-white">
-                      {project.tasks}
+                      {project.issueCount || 0} issues
                     </p>
                   </div>
                 </div>
@@ -346,74 +403,121 @@ function Projects() {
               {/* MULTI-SELECT ASSIGNEES */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Assign To (Select Members)
+                  Assign Members
                 </label>
 
-                <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 max-h-48 overflow-y-auto">
-                  {assignees.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">
-                      No users available.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {assignees.map((user) => (
-                        <label
-                          key={user._id}
-                          className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-600 rounded cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            value={user._id}
-                            // Logic check: ID có nằm trong mảng formData.assignee không?
-                            checked={formData.members.includes(user._id)}
-                            // Logic Onchange: Thêm vào hoặc Xóa đi
-                            onChange={(e) => {
-                              const userId = user._id;
-                              setFormData((prev) => {
-                                const currentAssignees = prev.members;
+                {/* Search Input */}
+                <div className="relative mb-2">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-                                if (currentAssignees.includes(userId)) {
-                                  // Nếu đã có -> Xóa đi (Uncheck)
-                                  return {
-                                    ...prev,
-                                    members: currentAssignees.filter(
-                                      (id) => id !== userId
-                                    ),
-                                  };
-                                } else {
-                                  // Nếu chưa có -> Thêm vào (Check)
-                                  return {
-                                    ...prev,
-                                    members: [...currentAssignees, userId],
-                                  };
-                                }
-                              });
-                            }}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                {/* Search Results Dropdown */}
+                {searchQuery && filteredAssignees.length > 0 && (
+                  <div className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 max-h-48 overflow-y-auto mb-2 shadow-lg">
+                    {filteredAssignees.map((user) => (
+                      <div
+                        key={user._id}
+                        onClick={() => addMember(user._id)}
+                        className="flex items-center gap-3 p-2 hover:bg-slate-100 dark:hover:bg-slate-600 rounded cursor-pointer transition-colors"
+                      >
+                        <div className="flex-1">
+                          <span className="block font-medium text-slate-700 dark:text-slate-200 text-sm">
+                            {user.username}
+                          </span>
+                          <span className="block text-xs text-slate-500 dark:text-slate-400">
+                            {user.email}
+                          </span>
+                        </div>
+                        {formData.members.some(member => member.userId === user._id) && (
+                          <CheckCircle
+                            size={16}
+                            className="text-green-600 flex-shrink-0"
                           />
-                          <div className="text-sm">
-                            <span className="font-medium text-slate-700 dark:text-slate-200">
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* No Results Message */}
+                {searchQuery && filteredAssignees.length === 0 && (
+                  <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 mb-2">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center italic">
+                      No users found matching "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+
+                {/* Selected Members Display with Role Selector */}
+                {selectedMembers.length > 0 && (
+                  <div className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-3">
+                      Selected Members ({selectedMembers.length})
+                    </p>
+                    <div className="space-y-2">
+                      {selectedMembers.map((user) => (
+                        <div
+                          key={user._id}
+                          className="flex items-center gap-3 p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600"
+                        >
+                          <div className="flex-1">
+                            <span className="block font-medium text-slate-700 dark:text-slate-200 text-sm">
                               {user.username}
                             </span>
                             <span className="block text-xs text-slate-500 dark:text-slate-400">
                               {user.email}
                             </span>
                           </div>
-                        </label>
+                          <select
+                            value={user.role}
+                            onChange={(e) => updateMemberRole(user._id, e.target.value)}
+                            className="px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-600 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="manager">Manager</option>
+                            <option value="member">Member</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => removeMember(user._id)}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          >
+                            <X size={16} className="text-red-600 dark:text-red-400" />
+                          </button>
+                        </div>
                       ))}
                     </div>
-                  )}
-                </div>
-                {/* Hiển thị số lượng đã chọn cho user dễ thấy */}
-                <p className="text-xs text-slate-500 mt-1">
-                  Selected: {formData.members.length} members
-                </p>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {selectedMembers.length === 0 && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">
+                    No members selected. Search and click to add members.
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+
+                    // Reset form data
+                    setFormData({ name: "", description: "", members: [] });
+                    setSearchQuery("");
+                  }}
                   className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
                 >
                   Cancel
