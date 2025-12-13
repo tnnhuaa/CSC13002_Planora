@@ -8,52 +8,26 @@ class ProjectRepository {
         return `PROJ${timestamp}${random}`;
     }
 
-    async create(projectData) {
-        projectData.key = await this.generateKey();
-        
-        return await Project.create(projectData);
+    async createProject(data) {
+        const key = await this.generateKey();
+        const project = new Project({ ...data, key });
+        return project.save();
     }
 
-    async findAll(filter = {}) {
-        return await Project.find(filter)
-            .populate('manager', "username email avatarURL")
-            .populate('members', 'username email avatarURL')
-            .sort({ createdAt: -1 });
+    async findProjectById(id) {
+        return Project.findById(id).populate('manager', 'username email');
     }
 
-    async findById(id) {
-        return await Project.findById(id)
-            .populate('manager', "username email avatarURL")
-            .populate('members', 'username email avatarURL');
+    async findAllProjects() {
+        return Project.find().populate('manager', 'username email');
     }
 
-    async findByManager(manager) {
-        return await Project.find({ manager: manager })
-            .populate('manager', "username email avatarURL")
-            .populate('members', 'username email avatarURL')
-            .sort({ createdAt: -1 });
+    async findProjectsById(ids, session = null) {
+        return Project.find({ _id: { $in: ids } }).populate('manager', 'username email').session(session);
     }
 
-    async findByAssignee (assigneeId) {
-        const projectIds = await Task.find({ assignee: assigneeId }).distinct('project');
-
-        const projects = await Project.find({ _id: { $in: projectIds } })
-            .populate('manager', 'username email')
-            .populate('members', 'username email avatarURL')
-            .sort({ createdAt: -1 });
-
-        return projects;
-    }
-
-    async update(id, updateData) {
-        return await Project.findByIdAndUpdate(id, updateData, {
-        new: true,
-        runValidators: true
-        });
-    }
-
-    async delete(id) {
-        return await Project.findByIdAndDelete(id);
+    async updateProject(id, data, session = null) {
+        return Project.findByIdAndUpdate(id, data, { new: true }).session(session);
     }
 }
 
