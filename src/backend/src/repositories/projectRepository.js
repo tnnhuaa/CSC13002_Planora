@@ -14,6 +14,9 @@ class ProjectRepository {
     return project.save();
   }
 
+  async findProjectsByManager(managerId) {
+    return Project.find({ manager: managerId });
+  }
   async findProjectById(id) {
     return Project.findById(id).populate("manager", "username email");
   }

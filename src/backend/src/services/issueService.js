@@ -1,6 +1,6 @@
 import { issueRepository } from "../repositories/issueRepository.js";
 import { projectRepository } from "../repositories/projectRepository.js";
-
+import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
 class IssueService {
   async checkIssuePermission(issueId, user) {
     const issue = await issueRepository.findById(issueId);
@@ -40,31 +40,33 @@ class IssueService {
       throw new Error("Title, project, assignee, and reporter are required!");
     }
 
-    // Validate project
     const projectExists = await projectRepository.findProjectById(project);
     if (!projectExists) {
       throw new Error("Project not found! Cannot create issue.");
     }
 
-    const reporterId = reporter.toString();
-    const managerId = projectExists.manager._id
-      ? projectExists.manager._id.toString()
-      : projectExists.manager.toString();
-    const memberIds = (projectExists.members || []).map((m) =>
-      m._id ? m._id.toString() : m.toString()
+    const projectMembers = await projectMembersRepository.findMembersByProject(
+      project
     );
 
-    const reporterIsParticipant =
-      reporterId === managerId || memberIds.includes(reporterId);
+    const memberUserIds = projectMembers.map((member) =>
+      String(member.user._id)
+    );
+
+    const managerId = String(projectExists.manager._id);
+    const allParticipantIds = new Set([...memberUserIds, managerId]);
+
+    const reporterId = String(reporter);
+    const assigneeId = String(assignee);
+
+    const reporterIsParticipant = allParticipantIds.has(reporterId);
     if (!reporterIsParticipant) {
       throw new Error(
         "Only project managers or members can create issues for this project."
       );
     }
 
-    const assigneeId = assignee.toString();
-    const assigneeIsParticipant =
-      assigneeId === managerId || memberIds.includes(assigneeId);
+    const assigneeIsParticipant = allParticipantIds.has(assigneeId);
 
     if (!assigneeIsParticipant) {
       throw new Error("Assignee must be a project manager or team member.");

@@ -26,9 +26,9 @@ app.use(
 
 // public routes
 app.use("/api/auth", authRoute);
+app.use(protectedRoute);
 
 // private routes
-app.use(protectedRoute);
 app.use("/api/users", userRoute);
 
 // Project routes

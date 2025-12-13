@@ -1,30 +1,63 @@
 import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
 import Issue from "../models/Issue.js";
+import mongoose from "mongoose";
 class ProjectService {
   async createProject(data, managerId) {
-    const { members, ...restData } = data;
-    const projectData = { ...restData, manager: managerId };
-    const project = await projectRepository.createProject(projectData);
-    await projectMembersRepository.addMember(project._id, managerId, "manager");
-    if (members && Array.isArray(members) && members.length > 0) {
-      await Promise.all(
-        members.map(async (member) => {
-          if (member.userId && member.userId !== managerId) {
-            await projectMembersRepository.addMember(
-              project._id,
-              member.userId,
-              member.role || "member"
-            );
-          }
-        })
-      );
-    }
-    return project;
-  }
+    try {
+      const { members, ...restData } = data;
+      const projectData = { ...restData, manager: managerId };
 
-  async getProjectMembers(projectId) {
-    return await projectMembersRepository.findMembersByProject(projectId);
+      const project = await projectRepository.createProject(projectData);
+      console.log("✅ (1) Created Project:", project._id);
+
+      await projectMembersRepository.addMember(
+        project._id,
+        managerId,
+        "manager"
+      );
+      console.log("✅ (2) Added Manager:", managerId);
+
+      if (members && Array.isArray(members) && members.length > 0) {
+        const managerIdStr = String(managerId);
+
+        await Promise.all(
+          members.map(async (member) => {
+            const memberIdStr = String(member.userId);
+
+            if (memberIdStr === managerIdStr) {
+              return;
+            }
+
+            try {
+              await projectMembersRepository.addMember(
+                project._id,
+                member.userId,
+                member.role || "member"
+              );
+              console.log("   -> Added Member:", member.userId);
+            } catch (innerError) {
+              if (
+                innerError.message &&
+                innerError.message.includes("already")
+              ) {
+                console.warn(
+                  `   ⚠️ Skipped duplicate member: ${member.userId}`
+                );
+              } else {
+                throw innerError;
+              }
+            }
+          })
+        );
+      }
+
+      return project;
+    } catch (error) {
+      console.error("❌ Transaction Failed:", error.message);
+      await session.abortTransaction();
+      throw error;
+    }
   }
 
   async addMemberToProject(projectId, userId, role) {
@@ -111,6 +144,9 @@ class ProjectService {
     return { ...project.toObject(), members, issues };
   }
 
+  async getProjectsManagedByUser(userId) {
+    return await projectRepository.findProjectsByManager(userId);
+  }
   async getProjectById(projectId) {
     const project = await projectRepository.findProjectById(projectId);
     if (!project) {
@@ -129,11 +165,15 @@ class ProjectService {
         if (!pm.project) {
           return null;
         }
+        const projectWithManager = await projectRepository.findProjectById(
+          pm.project._id
+        );
         // Fetch members for each project
         const members = await projectMembersRepository.findMembersByProject(
           pm.project._id
         );
-        return { ...pm.project.toObject(), members };
+        if (!projectWithManager) return null;
+        return { ...projectWithManager.toObject(), members };
       })
     );
 

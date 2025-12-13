@@ -28,6 +28,10 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (originalRequest.url && originalRequest.url.includes("/auth/signin")) {
+      return Promise.reject(error);
+    }
+
     // Don't retry refresh-token endpoint to prevent infinite loop
     if (originalRequest.url?.includes("/refresh-token")) {
       localStorage.removeItem("accessToken");
@@ -58,7 +62,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, clear token and redirect to login
         localStorage.removeItem("accessToken");
-        window.location.href = "/#/signin";
+        if (!window.location.hash.includes("signin")) {
+          window.location.href = "/#/signin";
+        }
         return Promise.reject(refreshError);
       }
     }

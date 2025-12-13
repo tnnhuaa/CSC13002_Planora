@@ -46,8 +46,6 @@ function Projects() {
         }),
         userService.getCurrentUser(),
       ]);
-      console.log(userRes);
-      console.log(projectRes);
 
       let projectList = [];
       if (Array.isArray(projectRes)) {
@@ -98,16 +96,7 @@ function Projects() {
       setIsModalOpen(false);
       setFormData({ name: "", description: "", members: [] });
 
-      const res = await projectService.getMyProjects();
-      const projectList = res.data || [];
-      setProjects(res.data || []);
-      setStats({
-        total: projectList.length,
-        active: projectList.filter(
-          (p) => p.status === "in_progress" || p.status === "todo"
-        ).length,
-        completed: projectList.filter((p) => p.status === "done").length,
-      });
+      await fetchProjects();
     } catch (error) {
       console.error("Failed to create project:", error);
     }

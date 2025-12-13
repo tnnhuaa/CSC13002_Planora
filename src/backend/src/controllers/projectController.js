@@ -3,24 +3,9 @@ import { projectService } from "../services/projectService.js";
 class ProjectController {
   async create(req, res) {
     try {
-      const { members, ...projectData } = req.body;
       const managerId = req.user.id;
 
-      const project = await projectService.createProject(
-        projectData,
-        managerId
-      );
-
-      // Add additional members if provided
-      if (members && Array.isArray(members)) {
-        for (const member of members) {
-          await projectService.addMemberToProject(
-            project._id,
-            member.userId,
-            member.role
-          );
-        }
-      }
+      const project = await projectService.createProject(req.body, managerId);
 
       res.status(201).json(project);
     } catch (error) {

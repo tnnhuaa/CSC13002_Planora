@@ -21,6 +21,9 @@ export const projectService = {
     }
   },
 
+  async getProjectsManagedByUser(userId) {
+    return await projectRepository.findProjectsByManager(userId);
+  },
   getProjectsByManager: async (managerId) => {
     try {
       const response = await axiosInstance.get(

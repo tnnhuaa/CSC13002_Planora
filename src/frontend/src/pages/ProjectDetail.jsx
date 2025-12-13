@@ -20,7 +20,7 @@ function ProjectDetail() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
+  const [issues, setIssues] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ function ProjectDetail() {
       const projectData = res.data || res;
 
       setProject(projectData);
-      setTasks(projectData.issues || []);
+      setIssues(projectData.issues || []);
       setComments(projectData.comments || []);
     } catch (error) {
       console.error("Failed to fetch project details:", error);
@@ -78,8 +78,8 @@ function ProjectDetail() {
     }
   };
 
-  const getTasksByStatus = (status) => {
-    return tasks.filter((task) => task.status === status);
+  const getIssuesByStatus = (status) => {
+    return issues.filter((issue) => issue.status === status);
   };
 
   const getPriorityColor = (priority) => {
@@ -149,10 +149,10 @@ function ProjectDetail() {
         </div>
       </div>
 
-      {/* Task Status Summary */}
+      {/* Issue Status Summary */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-          Tasks by Status
+          Issues by Status
         </p>
         <div className="grid grid-cols-4 gap-4">
           <div>
@@ -160,7 +160,7 @@ function ProjectDetail() {
               To Do
             </p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {getTasksByStatus("todo").length}
+              {getIssuesByStatus("todo").length}
             </p>
           </div>
           <div>
@@ -168,7 +168,7 @@ function ProjectDetail() {
               In Progress
             </p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {getTasksByStatus("in_progress").length}
+              {getIssuesByStatus("in_progress").length}
             </p>
           </div>
           <div>
@@ -176,7 +176,7 @@ function ProjectDetail() {
               Review
             </p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {getTasksByStatus("review").length}
+              {getIssuesByStatus("review").length}
             </p>
           </div>
           <div>
@@ -184,7 +184,7 @@ function ProjectDetail() {
               Done
             </p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {getTasksByStatus("done").length}
+              {getIssuesByStatus("done").length}
             </p>
           </div>
         </div>
@@ -293,11 +293,11 @@ function ProjectDetail() {
         </div>
       </div>
 
-      {/* Tasks/Issues Section */}
+      {/* Issues/Issues Section */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Issues ({tasks.length})
+            Issues ({issues.length})
           </h3>
           <button
             onClick={() => setIsIssueModalOpen(true)}
@@ -314,7 +314,7 @@ function ProjectDetail() {
             <Search size={16} className="text-slate-400" />
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Search issues..."
               className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 flex-1"
             />
           </div>
@@ -336,7 +336,7 @@ function ProjectDetail() {
         <div className="overflow-x-auto">
           <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
             {["To Do", "In Progress", "Review", "Done"].map((status) => {
-              const statusTasks = getTasksByStatus(
+              const statusIssues = getIssuesByStatus(
                 status === "To Do"
                   ? "todo"
                   : status === "In Progress"
@@ -353,37 +353,37 @@ function ProjectDetail() {
                       {status}
                     </h4>
                     <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
-                      {statusTasks.length}
+                      {statusIssues.length}
                     </span>
                   </div>
                   <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
-                    {statusTasks.map((task) => (
+                    {statusIssues.map((issue) => (
                       <div
-                        key={task._id}
+                        key={issue._id}
                         className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            {task.taskId}
+                            {issue.issueId}
                           </p>
                         </div>
                         <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
-                          {task.title}
+                          {issue.title}
                         </p>
                         <div className="flex flex-wrap gap-2 mb-3">
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
-                              task.priority
+                              issue.priority
                             )}`}
                           >
-                            {task.priority}
+                            {issue.priority}
                           </span>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
-                              task.type
+                              issue.type
                             )}`}
                           >
-                            {task.type}
+                            {issue.type}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -391,18 +391,18 @@ function ProjectDetail() {
                             className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
                             style={{
                               backgroundColor: generateAvatarColor(
-                                task.assignee?.username || "Unknown"
+                                issue.assignee?.username || "Unknown"
                               ),
                             }}
                           >
-                            {task.assignee?.avatar || "U"}
+                            {issue.assignee?.avatar || "U"}
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getDateColor(
-                              task.dueDate
+                              issue.dueDate
                             )}`}
                           >
-                            {task.dueDate}
+                            {issue.dueDate}
                           </span>
                         </div>
                       </div>

@@ -5,7 +5,7 @@ const BASE_URL = "/api/issues";
 export const issueService = {
   createIssue: async (issueData) => {
     try {
-      const response = await axiosInstance.post(`${BASE_URL}/`, issueData);
+      const response = await axiosInstance.post(`${BASE_URL}`, issueData);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
@@ -27,7 +27,7 @@ export const issueService = {
 
   getIssues: async () => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/`);
+      const response = await axiosInstance.get(`${BASE_URL}`);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
