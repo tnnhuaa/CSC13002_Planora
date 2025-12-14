@@ -3,6 +3,7 @@ import { connectDB } from "./config/db.js";
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import projectRoute from "./routes/projectRoute.js";
+import commentRoute from "./routes/commentRoute.js";
 import issueRoute from "./routes/issueRoute.js";
 import { protectedRoute } from "./middleware/authMiddleware.js";
 import cors from "cors";
@@ -36,6 +37,9 @@ app.use("/api/projects", projectRoute);
 
 // Task routes
 app.use("/api/issues", issueRoute);
+
+// Comment routes
+app.use("/api/comments", commentRoute);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

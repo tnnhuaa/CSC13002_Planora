@@ -10,27 +10,39 @@ import {
   Send,
   X,
   Hash,
+  MoreVertical,
+  Trash2,
+  Edit2,
   CheckCircle,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
 import { generateAvatarColor, getAvatarInitial } from "../utils/avatarUtils";
 import { issueService } from "../services/issueService";
+import { commentService } from "../services/commentService";
 import CreateIssue from "../components/CreateIssue";
+import { useAuthStore } from "../stores/useAuthStore";
 
 function ProjectDetail() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [project, setProject] = useState(null);
   const [issues, setIssues] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingMessage, setEditingMessage] = useState("");
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [assignees, setAssignees] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  
   // Fetch project details
   const fetchProjectDetails = async () => {
     try {
@@ -73,19 +85,83 @@ function ProjectDetail() {
     }
   };
 
-  const handleCommentSubmit = () => {
-    if (newComment.trim()) {
-      const comment = {
-        _id: Date.now().toString(),
-        author: "Current User",
-        avatar: "CU",
-        content: newComment,
-        createdAt: "now",
-      };
-      setComments([...comments, comment]);
-      setNewComment("");
-      // Todo api
+  const handleIssueClick = async (issue) => {
+    setSelectedIssue(issue);
+    await fetchComments(issue._id);
+    // Scroll to comment section
+    setTimeout(() => {
+      document.getElementById('comment-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const fetchComments = async (issueId) => {
+    try {
+      setLoadingComments(true);
+      const response = await commentService.getCommentsByIssue(issueId);
+      setComments(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+    } finally {
+      setLoadingComments(false);
     }
+  };
+
+  const handleCommentSubmit = async () => {
+    if (!newComment.trim() || !selectedIssue) return;
+
+    try {
+      await commentService.createComment(selectedIssue._id, newComment.trim());
+      setNewComment("");
+      await fetchComments(selectedIssue._id);
+    } catch (error) {
+      alert("Failed to add comment");
+    }
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditingMessage(comment.message);
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    if (!editingMessage.trim()) return;
+
+    try {
+      await commentService.updateComment(commentId, editingMessage.trim());
+      setEditingCommentId(null);
+      setEditingMessage("");
+      await fetchComments(selectedIssue._id);
+    } catch (error) {
+      console.error("Failed to update comment:", error);
+      alert(error.message || "Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    try {
+      await commentService.deleteComment(commentId);
+      await fetchComments(selectedIssue._id);
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      alert(error.message || "Failed to delete comment");
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
   };
 
   // Add member handlers
@@ -479,6 +555,7 @@ function ProjectDetail() {
                     {statusIssues.map((issue) => (
                       <div
                         key={issue._id}
+                        onClick={() => handleIssueClick(issue)}
                         className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -540,62 +617,178 @@ function ProjectDetail() {
       </div>
 
       {/* Comment Section */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-          Comment Section
-        </h3>
-
-        {/* Add Comment */}
-        <div className="mb-6">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mb-3"
-            rows={3}
-          />
-          <div className="flex justify-end">
+      {selectedIssue && (
+        <div id="comment-section" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+          {/* Issue Header */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {selectedIssue.title}
+              </h3>
+            </div>
             <button
-              onClick={handleCommentSubmit}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
-              disabled={!newComment.trim()}
+              onClick={() => setSelectedIssue(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer"
             >
-              <Send size={14} />
-              Comment
+              <X size={20} />
             </button>
           </div>
-        </div>
 
-        {/* Comments List */}
-        <div className="space-y-4">
-          {comments.map((comment) => {
-            const avatarColor = generateAvatarColor(comment.author);
-            return (
-              <div key={comment._id} className="flex gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                  style={{ backgroundColor: avatarColor }}
-                >
-                  {comment.avatar}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {comment.author}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {comment.createdAt}
-                    </p>
+          <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+            Comments ({comments.length})
+          </h4>
+
+          {/* Add Comment */}
+          <div className="mb-6">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add new comment..."
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mb-3"
+              rows={3}
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={handleCommentSubmit}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 cursor-pointer"
+                disabled={!newComment.trim()}
+              >
+                <Send size={14} />
+                Comment
+              </button>
+            </div>
+          </div>
+
+          {/* Comments List */}
+          {loadingComments ? (
+            <div className="text-center py-4 text-slate-500 dark:text-slate-400">
+              Loading comments...
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+              No comments yet. Be the first to comment!
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[...comments].reverse().map((comment) => {
+                const isOwner = user?._id === comment.user?._id;
+                const isEditing = editingCommentId === comment._id;
+                const avatarColor = generateAvatarColor(comment.user?.username || "Unknown");
+                const isMenuOpen = openMenuId === comment._id;
+
+                return (
+                  <div key={comment._id} className="flex gap-3 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ backgroundColor: avatarColor }}
+                    >
+                      {comment.user?.username?.substring(0, 2).toUpperCase() || "U"}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2 flex-1">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {comment.user?.username || "Unknown"}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {formatDate(comment.updatedAt)}
+                            {comment.updatedAt > comment.createdAt && (
+                                <span className="ml-1 text-xs italic opacity-70" title={formatDate(comment.updatedAt)}>
+                                    (edited)
+                                </span>
+                          )}
+                          </p>
+                          {user?._id === comment.user?._id && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        {isOwner && !isEditing && (
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(isMenuOpen ? null : comment._id);
+                              }}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600"
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                            {isMenuOpen && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-10" 
+                                  onClick={() => setOpenMenuId(null)}
+                                />
+                                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[120px]">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditComment(comment);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                  >
+                                    <Edit2 size={14} />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteComment(comment._id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition rounded-b-lg"
+                                  >
+                                    <Trash2 size={14} />
+                                    Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {isEditing ? (
+                        <div>
+                          <textarea
+                            value={editingMessage}
+                            onChange={(e) => setEditingMessage(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-600 text-slate-900 dark:text-white text-sm mb-2"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleSaveEdit(comment._id)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(null);
+                                setEditingMessage("");
+                              }}
+                              className="px-3 py-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 text-xs font-medium rounded transition"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                          {comment.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">
-                    {comment.content}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* CREATE ISSUE MODAL */}
       <CreateIssue
