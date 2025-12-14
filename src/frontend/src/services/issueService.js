@@ -15,7 +15,7 @@ export const issueService = {
     updateIssue: async (id, updatedData) => {
         try {
             // Endpoint: /api/issues/:id
-            const response = await axiosInstance.patch(
+            const response = await axiosInstance.put(
                 `${BASE_URL}/${id}`,
                 updatedData
             );

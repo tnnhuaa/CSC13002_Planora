@@ -37,7 +37,7 @@ export const useDashboard = () => {
             case "In Progress":
                 return "in_progress";
             case "Review":
-                return "review";
+                return "in_review";
             case "Done":
                 return "done";
             default:
@@ -207,8 +207,9 @@ export const useDashboard = () => {
     };
 
     const handleEditIssueClick = useCallback((issue) => {
-        setIssueToEdit(issue);
-        setIsEditIssueModalOpen(true);
+        // setIssueToEdit(issue);
+        // setIsEditIssueModalOpen(true);
+        return;
     }, []);
 
     const handleUpdateIssue = useCallback(async (updatedData) => {
