@@ -22,6 +22,8 @@ import { issueService } from "../services/issueService";
 import { commentService } from "../services/commentService";
 import CreateIssue from "../components/CreateIssue";
 import { useAuthStore } from "../stores/useAuthStore";
+import TaskFilterBar from "../components/TaskFilterBar";
+import { UseTaskFilter } from "../hooks/UseTaskFilter"; 
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -42,6 +44,22 @@ function ProjectDetail() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    searchTerm,
+    filters,
+    sortOrder,
+    openFilter,
+    filteredAndSortedTasks,
+    setSearchTerm,
+    handleFilterChange,
+    setOpenFilter,
+    getUniqueTypes,
+    getUniqueStatuses,
+    getUniqueAssignees,
+    toggleSortOrder,
+    getStatusDisplay,
+  } = UseTaskFilter(issues);
   
   // Fetch project details
   const fetchProjectDetails = async () => {
@@ -245,7 +263,7 @@ function ProjectDetail() {
   };
 
   const getIssuesByStatus = (status) => {
-    return issues.filter((issue) => issue.status === status);
+    return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
 
   const getPriorityColor = (priority) => {
@@ -310,7 +328,7 @@ function ProjectDetail() {
       <div className="mb-6">
         <button
           onClick={() => navigate("/projects")}
-          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4 transition"
+          className="flex items-center gap-2 text-primary dark:text-primary hover:text-primary mb-4 transition"
         >
           <ChevronLeft size={20} />
           Back to Projects
@@ -379,7 +397,7 @@ function ProjectDetail() {
                 Timeline
               </h3>
             </div>
-            <span className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg">
+            <span className="px-3 py-1 bg-primary text-white text-xs font-medium rounded-lg">
               Active
             </span>
           </div>
@@ -419,7 +437,7 @@ function ProjectDetail() {
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  className="bg-primary h-2 rounded-full transition-all"
                   style={{
                     width: `${project.progress}%`,
                   }}
@@ -447,7 +465,7 @@ function ProjectDetail() {
             </h3>
             <button
               onClick={() => setIsAddMemberModalOpen(true)}
-              className="ml-auto flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+              className="ml-auto flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
             >
               <Plus size={16} />
               <span>Add member</span>
@@ -496,7 +514,7 @@ function ProjectDetail() {
           </h3>
           <button
             onClick={() => setIsIssueModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
           >
             <Plus size={16} />
             Create Issue
@@ -505,26 +523,20 @@ function ProjectDetail() {
 
         {/* Filters and Search */}
         <div className="flex gap-3 mb-4 flex-wrap">
-          <div className="flex-1 min-w-[200px] flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg">
-            <Search size={16} className="text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search issues..."
-              className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 flex-1"
-            />
-          </div>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-            All Sprints
-            <ChevronDown size={14} />
-          </button>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-            All Status
-            <ChevronDown size={14} />
-          </button>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition">
-            All Assignees
-            <ChevronDown size={14} />
-          </button>
+          <TaskFilterBar
+            searchTerm={searchTerm}
+            filters={filters}
+            sortOrder={sortOrder}
+            openFilter={openFilter}
+            setSearchTerm={setSearchTerm}
+            handleFilterChange={handleFilterChange}
+            setOpenFilter={setOpenFilter}
+            getUniqueTypes={getUniqueTypes}
+            getUniqueStatuses={getUniqueStatuses}
+            getUniqueAssignees={getUniqueAssignees}
+            toggleSortOrder={toggleSortOrder}
+            getStatusDisplay={getStatusDisplay}
+        />
         </div>
 
         {/* Kanban Board */}
@@ -644,13 +656,13 @@ function ProjectDetail() {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add new comment..."
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 mb-3"
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary mb-3"
               rows={3}
             />
             <div className="flex justify-end">
               <button
                 onClick={handleCommentSubmit}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition disabled:opacity-50 cursor-pointer"
                 disabled={!newComment.trim()}
               >
                 <Send size={14} />
@@ -761,7 +773,7 @@ function ProjectDetail() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleSaveEdit(comment._id)}
-                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition"
+                              className="px-3 py-1 bg-primary hover:bg-primary text-white text-xs font-medium rounded transition"
                             >
                               Save
                             </button>
@@ -949,7 +961,7 @@ function ProjectDetail() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-lg"
                 >
                   Add Members
                 </button>

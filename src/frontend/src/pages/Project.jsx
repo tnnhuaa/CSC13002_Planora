@@ -186,7 +186,7 @@ function Projects() {
           {currentUser && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white rounded-lg transition"
             >
               <Plus size={20} />
               Create Project
@@ -288,7 +288,7 @@ function Projects() {
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all"
+                    className="bg-primary h-2 rounded-full transition-all"
                     style={{
                       width: `${project.progress}%`,
                     }}
@@ -534,7 +534,7 @@ function Projects() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-lg"
                 >
                   Create Project
                 </button>
