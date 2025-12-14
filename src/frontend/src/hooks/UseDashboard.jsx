@@ -23,7 +23,7 @@ export const useDashboard = () => {
         switch (status) {
             case "in_progress":
                 return "In Progress";
-            case "review":
+            case "in_review":
                 return "Review";
             case "done":
                 return "Done";

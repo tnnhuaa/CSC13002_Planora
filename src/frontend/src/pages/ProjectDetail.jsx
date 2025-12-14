@@ -370,7 +370,7 @@ function ProjectDetail() {
               Review
             </p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {getIssuesByStatus("review").length}
+              {getIssuesByStatus("in_review").length}
             </p>
           </div>
           <div>
@@ -549,7 +549,7 @@ function ProjectDetail() {
                   : status === "In Progress"
                   ? "in_progress"
                   : status === "Review"
-                  ? "review"
+                  ? "in_review"
                   : "done"
               );
 
