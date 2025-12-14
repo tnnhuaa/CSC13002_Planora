@@ -262,29 +262,42 @@ function ProjectDetail() {
     setSearchQuery("");
   };
 
+  const handleEditIssue = (issue, e) => {
+    e.stopPropagation();
+    // TODO: Implement edit issue logic
+    console.log("Edit issue:", issue);
+  };
+
+  const handleDeleteIssue = async (issue, e) => {
+    e.stopPropagation();
+    
+    //TODO: Implement delete issue logic
+    console.log("Delete issue:", issue);
+  };
+
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
-      High: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
-      Medium:
+      high: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      medium:
         "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700",
-      Low: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      low: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
     };
-    return colors[priority] || colors.Medium;
+    return colors[priority] || colors.medium;
   };
 
   const getTypeColor = (type) => {
     const colors = {
-      Feature:
-        "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700",
-      Bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
-      Story:
+      task:
+        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      story:
         "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
     };
-    return colors[type] || colors.Feature;
+    return colors[type] || colors.task;
   };
 
   const getDateColor = (date) => {
@@ -571,14 +584,31 @@ function ProjectDetail() {
                         className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            {issue.issueId}
+                          <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">
+                            {issue.title}
                           </p>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => handleEditIssue(issue, e)}
+                              className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
+                              title="Edit issue"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteIssue(issue, e)}
+                              className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                              title="Delete issue"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
-                          {issue.title}
+                        <p className="text-sm font-normal italic text-slate-400 dark:text-white mb-3 line-clamp-1">
+                          Desc: 
+                          <span className="ml-1">{issue?.description || "..."}</span>
                         </p>
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-5">
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
                               issue.priority
