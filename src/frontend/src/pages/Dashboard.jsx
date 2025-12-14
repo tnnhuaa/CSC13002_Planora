@@ -18,7 +18,7 @@ import EditIssue from "../components/EditIssue";
 import { useDashboard } from "../hooks/UseDashboard";
 
 const IssueCard = ({
-    issueKey,
+    projectName,
     title,
     priority,
     type,
@@ -55,7 +55,7 @@ const IssueCard = ({
             }`}
         >
             <p className="text-xs font-medium text-slate-500 mb-2">
-                {issueKey}
+                {projectName}
             </p>
             <h4 className="text-sm font-normal text-slate-900 dark:text-white mb-3 line-clamp-2">
                 {title}
@@ -290,11 +290,15 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-3">
                                 {filteredIssues["To Do"].map((issue, idx) => {
-                                    const { key, ...issueProps } = issue;
+                                    const { key, project, ...issueProps } =
+                                        issue;
                                     return (
                                         <IssueCard
                                             key={idx}
-                                            issueKey={key}
+                                            projectName={
+                                                project?.name ||
+                                                "Unknown Project"
+                                            }
                                             {...issueProps}
                                             onClick={() =>
                                                 handleEditIssueClick(issue)
@@ -340,11 +344,15 @@ export default function Dashboard() {
                             <div className="space-y-3">
                                 {filteredIssues["In Progress"].map(
                                     (issue, idx) => {
-                                        const { key, ...issueProps } = issue;
+                                        const { key, project, ...issueProps } =
+                                            issue;
                                         return (
                                             <IssueCard
                                                 key={idx}
-                                                issueKey={key}
+                                                projectName={
+                                                    project?.name ||
+                                                    "Unknown Project"
+                                                }
                                                 {...issueProps}
                                                 onClick={() =>
                                                     handleEditIssueClick(issue)
@@ -393,11 +401,15 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-3">
                                 {filteredIssues["Review"].map((issue, idx) => {
-                                    const { key, ...issueProps } = issue;
+                                    const { key, project, ...issueProps } =
+                                        issue;
                                     return (
                                         <IssueCard
                                             key={idx}
-                                            issueKey={key}
+                                            projectName={
+                                                project?.name ||
+                                                "Unknown Project"
+                                            }
                                             {...issueProps}
                                             onClick={() =>
                                                 handleEditIssueClick(issue)
@@ -442,11 +454,15 @@ export default function Dashboard() {
                             </div>
                             <div className="space-y-3">
                                 {filteredIssues["Done"].map((issue, idx) => {
-                                    const { key, ...issueProps } = issue;
+                                    const { key, project, ...issueProps } =
+                                        issue;
                                     return (
                                         <IssueCard
                                             key={idx}
-                                            issueKey={key}
+                                            projectName={
+                                                project?.name ||
+                                                "Unknown Project"
+                                            }
                                             {...issueProps}
                                             onClick={() =>
                                                 handleEditIssueClick(issue)

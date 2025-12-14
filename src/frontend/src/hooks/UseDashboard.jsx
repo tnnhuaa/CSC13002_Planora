@@ -47,8 +47,15 @@ export const useDashboard = () => {
 
     const fetchIssues = async () => {
         try {
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                console.warn(
+                    "No access token found. User may not be authenticated."
+                );
+                return;
+            }
+
             const data = await issueService.getIssuesForUser();
-            // Fetch issues assigned to the current user, organized by status
 
             const newIssues = {
                 "To Do": [],
@@ -78,7 +85,10 @@ export const useDashboard = () => {
     };
 
     useEffect(() => {
-        fetchIssues();
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            fetchIssues();
+        }
     }, []);
 
     const handleAddIssueClick = (column) => {
