@@ -10,6 +10,8 @@ export const useDashboard = () => {
     const [draggedFromColumn, setDraggedFromColumn] = useState(null);
     const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
     const [issueToEdit, setIssueToEdit] = useState(null);
+    const [isIssueOverviewOpen, setIsIssueOverviewOpen] = useState(false);
+    const [issueForOverview, setIssueForOverview] = useState(null);
 
     // Mock data for issues in each column
     const [issues, setIssues] = useState({
@@ -222,6 +224,11 @@ export const useDashboard = () => {
         return;
     }, []);
 
+    const handleShowIssueOverview = useCallback((issue) => {
+        setIssueForOverview(issue);
+        setIsIssueOverviewOpen(true);
+    }, []);
+
     const handleUpdateIssue = useCallback(async (updatedData) => {
         const { _id, issueId } = updatedData;
         const idToUpdate = _id || issueId;
@@ -252,6 +259,7 @@ export const useDashboard = () => {
         setIsEditIssueModalOpen,
         issueToEdit,
         handleEditIssueClick,
+        handleShowIssueOverview,
         handleUpdateIssue,
         selectedColumn,
         setSelectedColumn,
@@ -265,5 +273,8 @@ export const useDashboard = () => {
         handleDragEnd,
         draggedIssue,
         getFilteredIssues,
+        isIssueOverviewOpen,
+        setIsIssueOverviewOpen,
+        issueForOverview,
     };
 };

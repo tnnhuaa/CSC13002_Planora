@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import CreateIssue from "../components/CreateIssue";
 import EditIssue from "../components/EditIssue";
+import IssueOverview from "../components/IssueOverview";
 import { useDashboard } from "../hooks/UseDashboard";
 
 const IssueCard = ({
@@ -145,8 +146,11 @@ export default function Dashboard() {
         getFilteredIssues,
         isEditIssueModalOpen,
         setIsEditIssueModalOpen,
-        handleEditIssueClick,
+        handleShowIssueOverview,
         handleUpdateIssue,
+        isIssueOverviewOpen,
+        setIsIssueOverviewOpen,
+        issueForOverview,
     } = useDashboard();
 
     const filteredIssues = getFilteredIssues();
@@ -321,7 +325,7 @@ export default function Dashboard() {
                                             }
                                             {...issueProps}
                                             onClick={() =>
-                                                handleEditIssueClick(issue)
+                                                handleShowIssueOverview(issue)
                                             }
                                             onDragStart={(e) =>
                                                 handleDragStart(
@@ -375,7 +379,7 @@ export default function Dashboard() {
                                                 }
                                                 {...issueProps}
                                                 onClick={() =>
-                                                    handleEditIssueClick(issue)
+                                                    handleShowIssueOverview(issue)
                                                 }
                                                 onDragStart={(e) =>
                                                     handleDragStart(
@@ -432,7 +436,7 @@ export default function Dashboard() {
                                             }
                                             {...issueProps}
                                             onClick={() =>
-                                                handleEditIssueClick(issue)
+                                                handleShowIssueOverview(issue)
                                             }
                                             onDragStart={(e) =>
                                                 handleDragStart(
@@ -485,7 +489,7 @@ export default function Dashboard() {
                                             }
                                             {...issueProps}
                                             onClick={() =>
-                                                handleEditIssueClick(issue)
+                                                handleShowIssueOverview(issue)
                                             }
                                             onDragStart={(e) =>
                                                 handleDragStart(
@@ -529,6 +533,13 @@ export default function Dashboard() {
                 onClose={() => setIsAddIssueModalOpen(false)}
                 onCreateIssue={handleCreateIssue}
                 column={selectedColumn}
+            />
+
+            {/* Issue Overview Modal */}
+            <IssueOverview
+                isOpen={isIssueOverviewOpen}
+                issue={issueForOverview}
+                onClose={() => setIsIssueOverviewOpen(false)}
             />
 
             {/* Edit Issue Modal */}
