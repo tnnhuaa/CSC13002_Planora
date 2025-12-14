@@ -151,33 +151,51 @@ export default function Dashboard() {
 
     const filteredIssues = getFilteredIssues();
 
+    // Calculate statistics from issues
+    const allIssues = [
+        ...issues["To Do"],
+        ...issues["In Progress"],
+        ...issues.Review,
+        ...issues.Done,
+    ];
+
+    const completedCount = issues.Done.length;
+    const bugCount = allIssues.filter((issue) => issue.type === "Bug").length;
+    const highPriorityCount = allIssues.filter(
+        (issue) => issue.priority === "High"
+    ).length;
+    const uniqueProjects = new Set(
+        allIssues.map((issue) => issue.project?._id).filter(Boolean)
+    );
+    const projectCount = uniqueProjects.size;
+
     const statData = [
         {
             icon: CheckCircle2,
-            title: "Issues Completed",
-            value: "48",
-            trend: "+12% from last week",
+            title: "Tasks Completed",
+            value: completedCount,
+            trend: "Done status",
             isPositive: true,
         },
         {
             icon: AlertCircle,
-            title: "Pending Review",
-            value: "12",
-            trend: "-8% from last week",
+            title: "Bug Tasks",
+            value: bugCount,
+            trend: "Type: Bug",
             isPositive: false,
         },
         {
             icon: AlertCircle,
             title: "High Priority",
-            value: "5",
+            value: highPriorityCount,
             trend: "Urgent items",
             isPositive: false,
         },
         {
-            icon: TrendingUp,
-            title: "Team Velocity",
-            value: "32",
-            trend: "+15% from last sprint",
+            icon: Folder,
+            title: "Projects",
+            value: projectCount,
+            trend: "Participating",
             isPositive: true,
         },
     ];
@@ -197,10 +215,10 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 mb-2">
                         <div>
                             <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
-                                Planora
+                                Dashboard
                             </h1>
                             <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                                Modern project management for productive teams
+                                Overview of your tasks and projects
                             </p>
                         </div>
                     </div>
