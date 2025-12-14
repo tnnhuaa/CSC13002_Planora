@@ -111,7 +111,11 @@ export const signIn = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: `User ${user.username} logged in`, accessToken });
+      .json({ 
+        message: `User ${user.username} logged in`,
+        accessToken,
+        user: { _id: user._id, username: user.username},
+      });
   } catch (error) {
     console.error("Error occurred when signing in", error);
     return res.status(500).json({ message: "Internal Server Error" });
