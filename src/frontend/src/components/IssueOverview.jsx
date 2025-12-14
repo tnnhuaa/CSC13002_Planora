@@ -88,41 +88,33 @@ const IssueOverview = ({ isOpen, issue, onClose }) => {
 
                 {/* Content */}
                 <div className="p-6 space-y-4">
-                    {/* Project Name */}
-                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                            PROJECT
-                        </p>
-                        <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                            {issue.project?.name ||
-                                issue.projectName ||
-                                "Unknown Project"}
-                        </p>
-                    </div>
+                    {/* Project Name & Issue Title */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* Project Name */}
+                        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                                PROJECT
+                            </p>
+                            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                                {issue.project?.name ||
+                                    issue.projectName ||
+                                    "Unknown Project"}
+                            </p>
+                        </div>
 
-                    {/* Issue Title */}
-                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                            ISSUE TITLE
-                        </p>
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            {issue.title}
-                        </h3>
-                    </div>
-
-                    {/* Description */}
-                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-                            <FileText size={14} />
-                            DESCRIPTION
-                        </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                            {issue.description || "No description provided"}
-                        </p>
+                        {/* Issue Title */}
+                        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                                ISSUE TITLE
+                            </p>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                                {issue.title}
+                            </h3>
+                        </div>
                     </div>
 
                     {/* Type, Priority, Status in a grid */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                         {/* Type */}
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
@@ -173,16 +165,27 @@ const IssueOverview = ({ isOpen, issue, onClose }) => {
                                 {getStatusLabel(issue.status)}
                             </span>
                         </div>
+
+                        {/* Due Date */}
+                        <div className=" bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
+                                <Calendar size={14} />
+                                DUE DATE
+                            </p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                {issue.dueDate || "Dec 20, 2024"}
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Due Date */}
+                    {/* Description */}
                     <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-                            <Calendar size={14} />
-                            DUE DATE
+                            <FileText size={14} />
+                            DESCRIPTION
                         </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            {issue.dueDate || "Dec 20, 2024"}
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            {issue.description || "No description provided"}
                         </p>
                     </div>
                 </div>
