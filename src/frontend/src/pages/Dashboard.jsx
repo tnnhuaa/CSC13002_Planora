@@ -29,15 +29,15 @@ const IssueCard = ({
     onClick,
 }) => {
     const priorityColors = {
-        Low: "bg-blue-100 border-blue-300 text-blue-700",
-        High: "bg-red-100 border-red-300 text-red-700",
-        Medium: "bg-yellow-100 border-yellow-300 text-yellow-700",
+        low: "bg-blue-100 border-blue-300 text-blue-700",
+        high: "bg-red-100 border-red-300 text-red-700",
+        medium: "bg-yellow-100 border-yellow-300 text-yellow-700",
     };
 
     const typeColors = {
-        Story: "bg-green-100 border-green-300 text-green-700",
-        Feature: "bg-purple-100 border-purple-300 text-purple-700",
-        Bug: "bg-red-100 border-red-300 text-red-700",
+        story: "bg-green-100 border-green-300 text-green-700",
+        task: "bg-blue-100 border-blue-300 text-blue-700",
+        bug: "bg-red-100 border-red-300 text-red-700",
     };
 
     const dueStatusColors = {
@@ -160,9 +160,11 @@ export default function Dashboard() {
     ];
 
     const completedCount = issues.Done.length;
-    const bugCount = allIssues.filter((issue) => issue.type === "Bug").length;
+    const bugCount = allIssues.filter(
+        (issue) => issue.type === "bug" && issue.status !== "done"
+    ).length;
     const highPriorityCount = allIssues.filter(
-        (issue) => issue.priority === "High"
+        (issue) => issue.priority === "high" && issue.status !== "done"
     ).length;
     const uniqueProjects = new Set(
         allIssues.map((issue) => issue.project?._id).filter(Boolean)
