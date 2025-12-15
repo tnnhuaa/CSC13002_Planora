@@ -147,54 +147,72 @@ export const verifyOTP = async (email, otp_code) => {
   }
 };
 
-export const sendCommentNotificationEmail = async (recipients, commentData) => {
+export const sendMentionEmail = async (recipients, commentData) => {
   try {
     const { commenterName, issueKey, issueTitle, commentMessage, projectName } = commentData;
+    
+    // Format comment message 
+    const formatMessageWithMentions = (message) => {
+      return message.replace(/@(\w+)/g, '<strong style="color: #2563eb; font-weight: 600;">@$1</strong>');
+    };
+    
+    const formattedMessage = formatMessageWithMentions(commentMessage);
     
     const mailOptions = {
       from: `"PLANORA" <${process.env.SENDER_EMAIL}>`,
       bcc: recipients, 
-      subject: `New Comment on ${issueKey}: ${issueTitle}`,
+      subject: `New mention in ${issueKey}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin: 0;">PLANORA</h1>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f0f2f5;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px; font-weight: 700;">PLANORA</h1>
           </div>
           
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; color: white; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">New Comment</h2>
-            <p style="margin: 0; opacity: 0.9;">${commenterName} commented on the issue</p>
-          </div>
-          
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <p style="color: #666; margin: 0 0 10px 0; font-size: 14px;">
-              <strong>Project:</strong> ${projectName}
-            </p>
-            <p style="color: #666; margin: 0 0 10px 0; font-size: 14px;">
-              <strong>Issue:</strong> ${issueKey} - ${issueTitle}
-            </p>
-            <hr style="border: none; border-top: 1px solid #e9ecef; margin: 15px 0;"/>
-            <div style="background-color: white; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb;">
-              <p style="margin: 0; color: #333; white-space: pre-wrap;">${commentMessage}</p>
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; color: white;">
+              <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                
+                <div>
+                  <p style="margin: 0; font-size: 16px; font-weight: 600;">${commenterName} mentioned you in a comment</p>
+                </div>
+              </div>
+            </div>
+            
+            <div style="padding: 24px;">
+              <div style="background-color: #f7f8fa; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2563eb;">
+                <p style="color: #1c1e21; margin: 0 0 8px 0; font-size: 14px;">
+                  <strong style="color: #2563eb;">Project:</strong> ${projectName}
+                </p>
+                <p style="color: #1c1e21; margin: 0; font-size: 14px;">
+                  <strong style="color: #2563eb;">Issue:</strong> ${issueKey} - ${issueTitle}
+                </p>
+              </div>
+              
+              <div style="background-color: #f0f2f5; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <p style="color: #65676b; margin: 0 0 8px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Comment</p>
+                <p style="margin: 0; color: #1c1e21; font-size: 15px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;">${formattedMessage}</p>
+              </div>
+              
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" 
+                   style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
+                  View Comment
+                </a>
+              </div>
             </div>
           </div>
           
-          <div style="text-align: center; margin: 20px 0;">
-            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" 
-               style="display: inline-block; padding: 12px 30px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
-              View Issue
-            </a>
+          <div style="text-align: center; margin-top: 24px; padding: 16px;">
+            <p style="color: #65676b; font-size: 13px; margin: 0 0 8px 0;">
+              You received this email because you were mentioned in a comment.
+            </p>
+            <p style="color: #8a8d91; font-size: 12px; margin: 0;">
+              © 2024 PLANORA. All rights reserved.
+            </p>
           </div>
-          
-          <hr style="border: none; border-top: 1px solid #e9ecef; margin: 20px 0;"/>
-          
-          <p style="color: #6c757d; font-size: 12px; text-align: center; margin: 0;">
-            You received this email because you are involved in this issue.<br/>
-            © 2024 PLANORA. All rights reserved.
-          </p>
         </div>
       `,
-      text: `PLANORA - New Comment\n\n${commenterName} commented on ${issueKey}: ${issueTitle}\n\nProject: ${projectName}\n\nComment:\n${commentMessage}\n\n- PLANORA Team`,
+      text: `PLANORA - You were mentioned in a comment\n\n${commenterName} mentioned you:\n\nProject: ${projectName}\nIssue: ${issueKey} - ${issueTitle}\n\nComment:\n${commentMessage}\n\nView the comment at: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n\n- PLANORA Team`,
     };
 
     await transporter.sendMail(mailOptions);

@@ -24,6 +24,8 @@ import CreateIssue from "../components/CreateIssue";
 import { useAuthStore } from "../stores/useAuthStore";
 import TaskFilterBar from "../components/TaskFilterBar";
 import { UseTaskFilter } from "../hooks/UseTaskFilter";
+import CommentInput from "../components/CommentInput";
+import CommentText from "../components/CommentText"; 
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -713,23 +715,15 @@ function ProjectDetail() {
 
           {/* Add Comment */}
           <div className="mb-6">
-            <textarea
+            <CommentInput
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add new comment..."
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary mb-3"
-              rows={3}
+              onChange={setNewComment}
+              onSubmit={handleCommentSubmit}
+              placeholder="Add new comment... (Type @ to mention someone)"
+              members={project?.members || []}
+              disabled={!selectedIssue}
+              currentUser={user}
             />
-            <div className="flex justify-end">
-              <button
-                onClick={handleCommentSubmit}
-                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition disabled:opacity-50 cursor-pointer"
-                disabled={!newComment.trim()}
-              >
-                <Send size={14} />
-                Comment
-              </button>
-            </div>
           </div>
 
           {/* Comments List */}
@@ -859,9 +853,10 @@ function ProjectDetail() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                          {comment.message}
-                        </p>
+                        <CommentText
+                          text={comment.message}
+                          className="text-slate-700 dark:text-slate-300"
+                        />
                       )}
                     </div>
                   </div>
