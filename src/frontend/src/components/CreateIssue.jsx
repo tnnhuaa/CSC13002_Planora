@@ -17,11 +17,19 @@ const CreateIssue = ({
     type: "task",
     project: projectPropId || "",
     assignee: "",
+    start_due: "",
+    due_date: "",
     status: "todo",
   };
 
   const [formData, setFormData] = useState(initialFormState);
   const [projects, setProjects] = useState([]);
+  const [error, setError] = useState("");
+
+  // "YYYY-MM-DD"
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0];
+  };
 
   const mapColumnToStatus = (colName) => {
     if (!colName) return "todo";
@@ -36,6 +44,7 @@ const CreateIssue = ({
 
   useEffect(() => {
     if (isOpen) {
+      setError("");
       // Reset form khi mở modal
       setFormData((prev) => ({
         ...initialFormState,
@@ -64,6 +73,7 @@ const CreateIssue = ({
   }, [isOpen, projectPropId, column]);
 
   const handleCreate = () => {
+    setError("");
     if (!formData.title.trim()) return;
     if (!formData.project) {
       alert("Please select a project");
@@ -76,13 +86,20 @@ const CreateIssue = ({
       type: formData.type.toLowerCase(),
     };
 
-    onCreateIssue(payload);
+    if (formData.start_date && formData.due_date) {
+      if (new Date(formData.start_date) > new Date(formData.due_date)) {
+        setError("Due date must be greater than or equal to Start date");
+        return;
+      }
+    }
 
+    onCreateIssue(payload);
     setFormData(initialFormState);
   };
 
   const handleCancel = () => {
     setFormData(initialFormState);
+    setError("");
     onClose();
   };
   if (!isOpen) return null;
@@ -93,9 +110,10 @@ const CreateIssue = ({
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 transition-opacity"
       onClick={handleCancel}
     >
+      {/* 1. Modal width increased to max-w-2xl */}
       <div
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Chặn sự kiện click để không bị đóng khi bấm vào form
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700">
@@ -107,7 +125,6 @@ const CreateIssue = ({
               Add a new task to {column || "To Do"}
             </p>
           </div>
-          {/* 1. Nút X -> Cancel */}
           <button
             onClick={handleCancel}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
@@ -118,7 +135,6 @@ const CreateIssue = ({
 
         {/* Body */}
         <div className="p-6 space-y-4">
-          {/* Project Select (Chỉ hiện khi ở Dashboard) */}
           {!projectPropId && (
             <div>
               <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
@@ -127,9 +143,10 @@ const CreateIssue = ({
               <select
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.project}
-                onChange={(e) =>
-                  setFormData({ ...formData, project: e.target.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, project: e.target.value });
+                  setError("");
+                }}
               >
                 <option value="" disabled>
                   Select a project...
@@ -157,7 +174,7 @@ const CreateIssue = ({
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              onKeyDown={(e) => e.key === "Enter" && handleCreate()} // Bấm Enter để tạo nhanh
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
           </div>
 
@@ -177,12 +194,13 @@ const CreateIssue = ({
             />
           </div>
 
+          {/* Assignee */}
           <div>
             <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
               Assignee
             </label>
             <select
-              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.assignee}
               onChange={(e) =>
                 setFormData({ ...formData, assignee: e.target.value })
@@ -202,14 +220,14 @@ const CreateIssue = ({
               })}
             </select>
           </div>
-          {/* Priority & Type Row */}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Priority
               </label>
               <select
-                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.priority}
                 onChange={(e) =>
                   setFormData({ ...formData, priority: e.target.value })
@@ -225,7 +243,7 @@ const CreateIssue = ({
                 Type
               </label>
               <select
-                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.type}
                 onChange={(e) =>
                   setFormData({ ...formData, type: e.target.value })
@@ -236,11 +254,61 @@ const CreateIssue = ({
               </select>
             </div>
           </div>
+
+          {/* Date Inputs Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                min={getToday()}
+                // 2. Added max-w-xs to restrict width
+                className={`w-full max-w-xs px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  error
+                    ? "border-red-500"
+                    : "border-slate-200 dark:border-slate-600"
+                }`}
+                value={formData.start_date}
+                onChange={(e) => {
+                  setFormData({ ...formData, start_date: e.target.value });
+                  setError("");
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                Due Date
+              </label>
+              <input
+                type="date"
+                min={formData.start_date || getToday()}
+                // 2. Added max-w-xs to restrict width
+                className={`w-full max-w-xs px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  error
+                    ? "border-red-500"
+                    : "border-slate-200 dark:border-slate-600"
+                }`}
+                value={formData.due_date}
+                onChange={(e) => {
+                  setFormData({ ...formData, due_date: e.target.value });
+                  setError("");
+                }}
+              />
+            </div>
+
+            {/* Error Message Display Area */}
+            {error && (
+              <div className="col-span-2 text-sm text-red-500 mt-1 flex items-center gap-1">
+                <span>⚠️</span> {error}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-          {/* 2. Nút Cancel ở Footer */}
           <button
             onClick={handleCancel}
             className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 font-medium transition-colors"
