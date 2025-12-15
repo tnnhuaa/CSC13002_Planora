@@ -277,29 +277,41 @@ function ProjectDetail() {
     setSearchQuery("");
   };
 
+  const handleEditIssue = (issue, e) => {
+    e.stopPropagation();
+    // TODO: Implement edit issue logic
+    console.log("Edit issue:", issue);
+  };
+
+  const handleDeleteIssue = async (issue, e) => {
+    e.stopPropagation();
+
+    //TODO: Implement delete issue logic
+    console.log("Delete issue:", issue);
+  };
+
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
-      High: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
-      Medium:
+      high: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      medium:
         "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700",
-      Low: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      low: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
     };
-    return colors[priority] || colors.Medium;
+    return colors[priority] || colors.medium;
   };
 
   const getTypeColor = (type) => {
     const colors = {
-      Feature:
-        "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700",
-      Bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
-      Story:
+      task: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      story:
         "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
     };
-    return colors[type] || colors.Feature;
+    return colors[type] || colors.task;
   };
   const getDueDateLabel = (dateString) => {
     if (!dateString) return "";
