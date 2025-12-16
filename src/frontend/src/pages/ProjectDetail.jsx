@@ -23,7 +23,7 @@ import { commentService } from "../services/commentService";
 import CreateIssue from "../components/CreateIssue";
 import { useAuthStore } from "../stores/useAuthStore";
 import TaskFilterBar from "../components/TaskFilterBar";
-import { UseTaskFilter } from "../hooks/UseTaskFilter"; 
+import { UseTaskFilter } from "../hooks/UseTaskFilter";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -60,7 +60,20 @@ function ProjectDetail() {
     toggleSortOrder,
     getStatusDisplay,
   } = UseTaskFilter(issues);
-  
+
+  const calculateDaysLeft = (dateString) => {
+    if (!dateString) return null;
+    const due = new Date(dateString);
+    const today = new Date();
+    // Reset hours to compare dates only
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    const diffTime = due - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   // Fetch project details
   const fetchProjectDetails = async () => {
     try {
@@ -108,7 +121,9 @@ function ProjectDetail() {
     await fetchComments(issue._id);
     // Scroll to comment section
     setTimeout(() => {
-      document.getElementById('comment-section')?.scrollIntoView({ behavior: 'smooth' });
+      document
+        .getElementById("comment-section")
+        ?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
 
@@ -271,6 +286,7 @@ function ProjectDetail() {
   const handleDeleteIssue = async (issue, e) => {
     e.stopPropagation();
     
+
     //TODO: Implement delete issue logic
     console.log("Delete issue:", issue);
   };
@@ -291,19 +307,37 @@ function ProjectDetail() {
 
   const getTypeColor = (type) => {
     const colors = {
-      task:
-        "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      task: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
       bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
       story:
         "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
     };
     return colors[type] || colors.task;
   };
+  const getDueDateLabel = (dateString) => {
+    if (!dateString) return "";
+    const days = calculateDaysLeft(dateString);
 
-  const getDateColor = (date) => {
-    if (date === "Due Soon") {
-      return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700";
+    if (days < 0) return `${Math.abs(days)} days overdue`;
+    if (days === 0) return "Due today";
+    if (days === 1) return "1 day left";
+    return `${days} days left`;
+  };
+  const getDueDateColor = (dateString) => {
+    if (!dateString)
+      return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
+
+    const days = calculateDaysLeft(dateString);
+
+    if (days < 0) {
+      // Overdue: Red
+      return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700";
     }
+    if (days === 0 || days <= 3) {
+      // Due Soon (<= 3 days): Orange/Yellow
+      return "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700";
+    }
+    // Safe: Gray
     return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
   };
 
@@ -549,7 +583,7 @@ function ProjectDetail() {
             getUniqueAssignees={getUniqueAssignees}
             toggleSortOrder={toggleSortOrder}
             getStatusDisplay={getStatusDisplay}
-        />
+          />
         </div>
 
         {/* Kanban Board */}
@@ -577,76 +611,71 @@ function ProjectDetail() {
                     </span>
                   </div>
                   <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
-                    {statusIssues.map((issue) => (
-                      <div
-                        key={issue._id}
-                        onClick={() => handleIssueClick(issue)}
-                        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">
+                    {statusIssues.map((issue) => {
+                      const daysLeft = calculateDaysLeft(issue.due_date);
+                      const issueOver = daysLeft !== null && daysLeft < 0;
+                      console.log(issueOver);
+                      return (
+                        <div
+                          key={issue._id}
+                          onClick={() => handleIssueClick(issue)}
+                          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              {issue.issueId}
+                            </p>
+                          </div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
                             {issue.title}
                           </p>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => handleEditIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
-                              title="Edit issue"
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
+                                issue.priority
+                              )}`}
                             >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
-                              title="Delete issue"
+                              {issue.priority}
+                            </span>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
+                                issue.type
+                              )}`}
                             >
-                              <Trash2 size={14} />
-                            </button>
+                              {issue.type}
+                            </span>
                           </div>
-                        </div>
-                        <p className="text-sm font-normal italic text-slate-400 dark:text-white mb-3 line-clamp-1">
-                          Desc: 
-                          <span className="ml-1">{issue?.description || "..."}</span>
-                        </p>
-                        <div className="flex flex-wrap gap-2 mb-5">
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
-                              issue.priority
-                            )}`}
-                          >
-                            {issue.priority}
-                          </span>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
-                              issue.type
-                            )}`}
-                          >
-                            {issue.type}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                            style={{
-                              backgroundColor: generateAvatarColor(
+                          <div className="flex items-center justify-between">
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                              style={{
+                                backgroundColor: generateAvatarColor(
+                                  issue.assignee?.username || "Unknown"
+                                ),
+                              }}
+                            >
+                              {getAvatarInitial(
                                 issue.assignee?.username || "Unknown"
-                              ),
-                            }}
-                          >
-                            {getAvatarInitial(
-                              issue.assignee?.username || "Unknown"
+                              )}
+                            </div>
+                            {issue.due_date && (
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-md border ${getDueDateColor(
+                                  issue.due_date
+                                )}`}
+                              >
+                                {getDueDateLabel(issue.due_date)}
+                              </span>
+                            )}
+                            {issueOver && (
+                              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                                Expired
+                              </span>
                             )}
                           </div>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-md border ${getDateColor(
-                              issue.dueDate
-                            )}`}
-                          >
-                            {issue.dueDate}
-                          </span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
                       <Plus size={16} className="mx-auto" />
                     </button>
@@ -660,7 +689,10 @@ function ProjectDetail() {
 
       {/* Comment Section */}
       {selectedIssue && (
-        <div id="comment-section" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+        <div
+          id="comment-section"
+          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6"
+        >
           {/* Issue Header */}
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
             <div>
@@ -715,16 +747,22 @@ function ProjectDetail() {
               {[...comments].reverse().map((comment) => {
                 const isOwner = user?._id === comment.user?._id;
                 const isEditing = editingCommentId === comment._id;
-                const avatarColor = generateAvatarColor(comment.user?.username || "Unknown");
+                const avatarColor = generateAvatarColor(
+                  comment.user?.username || "Unknown"
+                );
                 const isMenuOpen = openMenuId === comment._id;
 
                 return (
-                  <div key={comment._id} className="flex gap-3 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
+                  <div
+                    key={comment._id}
+                    className="flex gap-3 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg"
+                  >
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                       style={{ backgroundColor: avatarColor }}
                     >
-                      {comment.user?.username?.substring(0, 2).toUpperCase() || "U"}
+                      {comment.user?.username?.substring(0, 2).toUpperCase() ||
+                        "U"}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -735,10 +773,13 @@ function ProjectDetail() {
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             {formatDate(comment.updatedAt)}
                             {comment.updatedAt > comment.createdAt && (
-                                <span className="ml-1 text-xs italic opacity-70" title={formatDate(comment.updatedAt)}>
-                                    (edited)
-                                </span>
-                          )}
+                              <span
+                                className="ml-1 text-xs italic opacity-70"
+                                title={formatDate(comment.updatedAt)}
+                              >
+                                (edited)
+                              </span>
+                            )}
                           </p>
                           {user?._id === comment.user?._id && (
                             <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
@@ -759,8 +800,8 @@ function ProjectDetail() {
                             </button>
                             {isMenuOpen && (
                               <>
-                                <div 
-                                  className="fixed inset-0 z-10" 
+                                <div
+                                  className="fixed inset-0 z-10"
                                   onClick={() => setOpenMenuId(null)}
                                 />
                                 <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[120px]">
