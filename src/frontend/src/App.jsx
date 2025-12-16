@@ -12,6 +12,7 @@ import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
 import Issues from "./pages/Issue";
+import UserManagement from "./pages/Admin/UserManagement";
 
 const COLOR_MAP = {
   Blue: "#2563eb", // blue-600
@@ -75,11 +76,7 @@ function App() {
             />
             <Route
               path="/users"
-              element={
-                <div className="text-slate-800 dark:text-white">
-                  Trang Users
-                </div>
-              }
+              element={<UserManagement />}
             />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
