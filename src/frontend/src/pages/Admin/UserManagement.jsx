@@ -40,7 +40,7 @@ const UserManagement = () => {
             try {
                 setLoading(true);
                 // Fetch assignees from API
-                const assigneesData = await userService.getAssignee();
+                const assigneesData = await userService.getAllUser();
                 
                 // Transform data from DB format to component format
                 const transformedUsers = assigneesData.data.map((user) => ({
