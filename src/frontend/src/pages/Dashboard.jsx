@@ -379,7 +379,9 @@ export default function Dashboard() {
                                                 }
                                                 {...issueProps}
                                                 onClick={() =>
-                                                    handleShowIssueOverview(issue)
+                                                    handleShowIssueOverview(
+                                                        issue
+                                                    )
                                                 }
                                                 onDragStart={(e) =>
                                                     handleDragStart(

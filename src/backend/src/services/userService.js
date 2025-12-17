@@ -1,3 +1,4 @@
+import { get } from "mongoose";
 import userRepository from "../repositories/userRepository.js";
 
 const userService = {
@@ -9,7 +10,17 @@ const userService = {
     } catch (error) {
         throw error;
     }
-  }
+  },
+
+  getAllUser: async () => {
+    try {
+        const users = await userRepository.findAllUser();
+        
+        return users;
+    } catch (error) {
+        throw error;
+    }
+  } 
 };
 
 export default userService;

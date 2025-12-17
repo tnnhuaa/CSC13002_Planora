@@ -1,10 +1,25 @@
 import { commentRepository } from "../repositories/commentRepository.js";
 import { issueRepository } from "../repositories/issueRepository.js";
 import Issue from "../models/Issue.js";
-import { sendCommentNotificationEmail } from "./emailService.js";
+import { sendMentionEmail } from "./emailService.js";
 import Comment from "../models/Comment.js";
+import { projectRepository } from "../repositories/projectRepository.js";
+import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
 
 class CommentService {
+  // Parse @mentions from message using regex
+  parseMentions(message) {
+    const mentionRegex = /@(\w+)/g;
+    const mentions = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(message)) !== null) {
+      mentions.push(match[1].toLowerCase());
+    }
+    
+    return mentions;
+  }
+
   async createComment(issueId, userId, message) {
     try {
       // Get issue with populated fields
@@ -23,40 +38,37 @@ class CommentService {
       issue.comments.push(comment._id);
       await issue.save();
 
-      // Determine email recipients
-      const recipients = await this.getEmailRecipients(issue, userId);
+      // Parse mentions from message
+      const mentions = this.parseMentions(message);
 
-      // Send email notifications if there are recipients
-      if (recipients.length > 0) {
-        const populatedComment = await commentRepository.findAll({
-          _id: comment._id,
-        });
-        
-        const commenter = populatedComment[0].user;
-        
-        console.log('Sending email to:', recipients);
-        console.log('Comment data:', {
-          commenterName: commenter.username,
-          issueKey: issue.key,
-          issueTitle: issue.title,
-          projectName: issue.project?.name || issue.project?.title || 'Unknown Project',
-        });
-        
-        try {
-          await sendCommentNotificationEmail(recipients, {
-            commenterName: commenter.username,
-            issueKey: issue.key,
-            issueTitle: issue.title,
-            commentMessage: message,
-            projectName: issue.project?.name || issue.project?.title || 'Unknown Project',
+      // Only send emails if there are mentions
+      if (mentions.length > 0) {
+        const recipients = await this.getEmailRecipientsFromMentions(
+          issue,
+          userId,
+          mentions
+        );
+
+        if (recipients.length > 0) {
+          const populatedComment = await commentRepository.findAll({
+            _id: comment._id,
           });
-          console.log('Email sent successfully');
-        } catch (emailError) {
-          console.error('Failed to send email notification:', emailError);
-          // Don't throw error, just log it so comment creation still succeeds
+          
+          const commenter = populatedComment[0].user;
+          
+          try {
+            await sendMentionEmail(recipients, {
+              commenterName: commenter.username,
+              issueKey: issue.key,
+              issueTitle: issue.title,
+              commentMessage: message,
+              projectName: issue.project?.name || issue.project?.title || 'Unknown Project',
+            });
+            console.log('Email sent successfully');
+          } catch (emailError) {
+            console.error('Failed to send email notification:', emailError);
+          }
         }
-      } else {
-        console.log('No recipients to send email to');
       }
 
       const result = await commentRepository.findAll({ _id: comment._id });
@@ -66,41 +78,41 @@ class CommentService {
     }
   }
 
-  async getEmailRecipients(issue, commenterId) {
+  async getEmailRecipientsFromMentions(issue, commenterId, mentions) {
     try {
       const recipientSet = new Set();
 
-      console.log('Getting email recipients for issue:', issue.key);
-      console.log('Commenter ID:', commenterId);
-      console.log('Assignee:', issue.assignee?.email);
-      console.log('Reporter:', issue.reporter?.email);
+      // Get project with all members
+        const project = await projectRepository.findProjectById(issue.project._id);
+        if (!project) {
+          return [];
+        }
 
-      // Get all previous commenters
-      if (issue.comments && issue.comments.length > 0) {
-        const existingComments = await commentRepository.findAll({
-          _id: { $in: issue.comments },
+        // Populate members
+        const projectMembers = await projectMembersRepository.findMembersByProject(project);
+
+      // Check if @all is mentioned
+      if (mentions.includes('all')) {
+        projectMembers.forEach((member) => {
+          if (member.user && member.user._id.toString() !== commenterId.toString()) {
+            recipientSet.add(member.user.email);
+          }
         });
-
-        existingComments.forEach((comment) => {
-          if (comment.user && comment.user._id.toString() !== commenterId.toString()) {
-            recipientSet.add(comment.user.email);
+      } else {
+        // Send to specific mentioned users
+        mentions.forEach((mentionedUsername) => {
+          const member = projectMembers.find(
+            (m) => m.user && m.user.username.toLowerCase() === mentionedUsername
+          );
+          if (member && member.user._id.toString() !== commenterId.toString()) {
+            recipientSet.add(member.user.email);
           }
         });
       }
 
-      // Add assignee email if they're not the commenter
-      if (issue.assignee && issue.assignee._id.toString() !== commenterId.toString()) {
-        recipientSet.add(issue.assignee.email);
-      }
-
-      // Add reporter email if they're not the commenter
-      if (issue.reporter && issue.reporter._id.toString() !== commenterId.toString()) {
-        recipientSet.add(issue.reporter.email);
-      }
-
       return Array.from(recipientSet);
     } catch (error) {
-      console.error("Error getting email recipients:", error);
+      console.error("Error getting email recipients from mentions:", error);
       return [];
     }
   }

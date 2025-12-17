@@ -20,4 +20,11 @@ router.get(
   userController.getAssignees
 );
 
+router.get(
+  "/allusers",
+  protectedRoute,
+  authorize("admin"),
+  userController.getAllUser
+);
+
 export default router;

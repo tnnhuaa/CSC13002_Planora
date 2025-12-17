@@ -18,6 +18,23 @@ class UserController {
     }
   }
 
+  async getAllUser (req, res) {
+    try {
+      const users = await userService.getAllUser();
+      return res.status(200).json({
+        success: true,
+        message: "Get all users successfully",
+        count: users.length,
+        data: users,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Internal Server Error",
+      });
+    }
+  }
+
   async authMe (req, res) {
     try {
       const user = req.user; 

@@ -9,6 +9,16 @@ const userRepository = {
       throw error;
     }
   },
+
+  findAllUser: async () => {
+    try {
+      return await User.find()
+        .select("-hashedPassword")
+        .sort({ username: 1 });
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default userRepository;
