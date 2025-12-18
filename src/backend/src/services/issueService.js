@@ -1,6 +1,7 @@
 import { issueRepository } from "../repositories/issueRepository.js";
 import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
+import userRepository from "../repositories/userRepository.js";
 class IssueService {
   async checkIssuePermission(issueId, user) {
     const issue = await issueRepository.findById(issueId);
@@ -40,6 +41,8 @@ class IssueService {
       throw new Error("Title, project, assignee, and reporter are required!");
     }
 
+    await this.validateAssigneeNotBanned(assignee);
+
     const projectExists = await projectRepository.findProjectById(project);
     if (!projectExists) {
       throw new Error("Project not found! Cannot create issue.");
@@ -75,6 +78,17 @@ class IssueService {
     return await issueRepository.create(issueData);
   }
 
+  async validateAssigneeNotBanned(assigneeId) {
+    const user = await userRepository.findById(assigneeId);
+    if (!user) {
+      throw new Error("Assignee user not found");
+    }
+    // - Status enum is ["inactive", "active", "banned"]
+    if (user.status === "banned") {
+      throw new Error("Cannot assign tasks to a banned user.");
+    }
+  }
+
   async getAllIssues(filter = {}) {
     return await issueRepository.findAll(filter);
   }
@@ -105,6 +119,10 @@ class IssueService {
 
     if (updateData.key) {
       delete updateData.key;
+    }
+
+    if (updateData.assignee) {
+      await this.validateAssigneeNotBanned(updateData.assignee);
     }
 
     await this.checkIssuePermission(id, user);
