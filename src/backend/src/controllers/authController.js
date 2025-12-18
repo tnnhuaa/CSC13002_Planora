@@ -75,13 +75,30 @@ export const signIn = async (req, res) => {
     if (!username || !password) {
       return res
         .status(400)
-        .json({ message: "Username and password are required" });
+        .json({ message: "Username/Email and password are required" });
     }
 
-    const user = await User.findOne({ username });
+    const isEmail = username.includes("@");
+
+    const query = isEmail ? { email: username } : { username: username };
+    const user = await User.findOne(query);
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    if (user.status === "banned") {
+      return res.status(403).json({
+        message:
+          "Your account has been banned. Please contact the administrator.",
+      });
+    }
+
+    // if (user.status === "inactive") {
+    //   return res.status(403).json({
+    //     message: "Your account is inactive. Please verify your email.",
+    //   });
+    // }
 
     const passwordCorrect = await bcrypt.compare(password, user.hashedPassword);
     if (!passwordCorrect) {
@@ -109,13 +126,11 @@ export const signIn = async (req, res) => {
       maxAge: REFRESH_TOKEN_TTL,
     });
 
-    return res
-      .status(200)
-      .json({ 
-        message: `User ${user.username} logged in`,
-        accessToken,
-        user: { _id: user._id, username: user.username},
-      });
+    return res.status(200).json({
+      message: `User ${user.username} logged in`,
+      accessToken,
+      user: { _id: user._id, username: user.username },
+    });
   } catch (error) {
     console.error("Error occurred when signing in", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -153,6 +168,18 @@ export const refreshToken = async (req, res) => {
     const session = await Session.findOne({ refreshToken: token });
     if (!session) {
       return res.status(403).json({ message: "Invalid refresh token" });
+    }
+    const user = await User.findById(session.userID);
+
+    // 2. Check if user exists and is NOT banned
+    if (!user || user.status === "banned") {
+      // Security: Destroy the session immediately
+      await Session.deleteOne({ refreshToken: token });
+      res.clearCookie("refreshToken");
+
+      return res.status(403).json({
+        message: "Session terminated. Your account has been banned.",
+      });
     }
     // Check if token is valid and not expired
     if (session.expiresAt < new Date()) {

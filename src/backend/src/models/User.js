@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    fullName: {
+      type: String,
+      required: true, // Set to true if you want to force it
+      trim: true,
+    },
     username: {
       type: String,
       required: true,
@@ -30,6 +35,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+    status: {
+      type: String,
+      enum: ["inactive", "active", "banned"],
+      default: "active",
     },
   },
   {

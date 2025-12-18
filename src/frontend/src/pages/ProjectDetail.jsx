@@ -25,7 +25,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 import TaskFilterBar from "../components/TaskFilterBar";
 import { UseTaskFilter } from "../hooks/UseTaskFilter";
 import CommentInput from "../components/CommentInput";
-import CommentText from "../components/CommentText"; 
+import CommentText from "../components/CommentText";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -287,7 +287,6 @@ function ProjectDetail() {
 
   const handleDeleteIssue = async (issue, e) => {
     e.stopPropagation();
-    
 
     //TODO: Implement delete issue logic
     console.log("Delete issue:", issue);
