@@ -11,8 +11,8 @@ const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 days (milliseconds)
 
 export const signUp = async (req, res) => {
   try {
-    const { username, password, email } = req.body;
-
+    const { username, password, email, fullName } = req.body;
+    const finalFullName = fullName || username;
     if (!username || !password || !email) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -58,6 +58,9 @@ export const signUp = async (req, res) => {
     await User.create({
       username,
       hashedPassword,
+      role: "user",
+      status: "active",
+      fullName: finalFullName,
       email,
     });
 

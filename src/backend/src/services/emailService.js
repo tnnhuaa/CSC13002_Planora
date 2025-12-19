@@ -149,18 +149,22 @@ export const verifyOTP = async (email, otp_code) => {
 
 export const sendMentionEmail = async (recipients, commentData) => {
   try {
-    const { commenterName, issueKey, issueTitle, commentMessage, projectName } = commentData;
-    
-    // Format comment message 
+    const { commenterName, issueKey, issueTitle, commentMessage, projectName } =
+      commentData;
+
+    // Format comment message
     const formatMessageWithMentions = (message) => {
-      return message.replace(/@(\w+)/g, '<strong style="color: #2563eb; font-weight: 600;">@$1</strong>');
+      return message.replace(
+        /@(\w+)/g,
+        '<strong style="color: #2563eb; font-weight: 600;">@$1</strong>'
+      );
     };
-    
+
     const formattedMessage = formatMessageWithMentions(commentMessage);
-    
+
     const mailOptions = {
       from: `"PLANORA" <${process.env.SENDER_EMAIL}>`,
-      bcc: recipients, 
+      bcc: recipients,
       subject: `New mention in ${issueKey}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f0f2f5;">
@@ -194,7 +198,7 @@ export const sendMentionEmail = async (recipients, commentData) => {
               </div>
               
               <div style="text-align: center; margin: 24px 0;">
-                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" 
+                <a href="${process.env.CLIENT_URL || "http://localhost:5173"}" 
                    style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
                   View Comment
                 </a>
@@ -212,7 +216,9 @@ export const sendMentionEmail = async (recipients, commentData) => {
           </div>
         </div>
       `,
-      text: `PLANORA - You were mentioned in a comment\n\n${commenterName} mentioned you:\n\nProject: ${projectName}\nIssue: ${issueKey} - ${issueTitle}\n\nComment:\n${commentMessage}\n\nView the comment at: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n\n- PLANORA Team`,
+      text: `PLANORA - You were mentioned in a comment\n\n${commenterName} mentioned you:\n\nProject: ${projectName}\nIssue: ${issueKey} - ${issueTitle}\n\nComment:\n${commentMessage}\n\nView the comment at: ${
+        process.env.CLIENT_URL || "http://localhost:5173"
+      }\n\n- PLANORA Team`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -223,5 +229,130 @@ export const sendMentionEmail = async (recipients, commentData) => {
   } catch (error) {
     console.error("Error sending comment notification:", error);
     throw new Error("Failed to send comment notification email");
+  }
+};
+
+export const sendAccountCreatedEmail = async (email, name, password, role) => {
+  try {
+    const mailOptions = {
+      from: `"PLANORA Admin" <${process.env.SENDER_EMAIL}>`,
+      to: email,
+      subject: "Welcome to Planora - Account Created",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; color: white;">
+            <h1 style="margin: 0;">Welcome to Planora</h1>
+          </div>
+          <div style="border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 10px 10px; padding: 20px;">
+            <p>Hello <strong>${name}</strong>,</p>
+            <p>An administrator has created an account for you on Planora.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 5px 0;"><strong>Username:</strong> ${
+                email.split("@")[0]
+              }</p>
+              <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+              <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
+              <p style="margin: 5px 0;"><strong>Role:</strong> ${role}</p>
+            </div>
+
+            <p>Please log in and change your password immediately.</p>
+            <div style="text-align: center; margin-top: 25px;">
+              <a href="${
+                process.env.CLIENT_URL
+              }" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending create email:", error);
+  }
+};
+
+export const sendAccountUpdatedEmail = async (email, name, changes) => {
+  try {
+    const changeList = changes.map((c) => `<li>${c}</li>`).join("");
+    const mailOptions = {
+      from: `"PLANORA Admin" <${process.env.SENDER_EMAIL}>`,
+      to: email,
+      subject: "Account Details Updated",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0; color: white;">
+            <h2 style="margin: 0;">Account Updated</h2>
+          </div>
+          <div style="border: 1px solid #e1e1e1; border-top: none; padding: 20px; border-radius: 0 0 10px 10px;">
+            <p>Hello <strong>${name}</strong>,</p>
+            <p>Your account details have been updated by an administrator:</p>
+            <ul style="background-color: #fff3cd; padding: 15px 30px; border-radius: 5px; color: #856404;">
+              ${changeList}
+            </ul>
+            <p>If you did not expect these changes, please contact your administrator.</p>
+          </div>
+        </div>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending update email:", error);
+  }
+};
+
+export const sendAccountDeletedEmail = async (email, name) => {
+  try {
+    const mailOptions = {
+      from: `"PLANORA Admin" <${process.env.SENDER_EMAIL}>`,
+      to: email,
+      subject: "Account Deleted",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #ef4444; padding: 20px; border-radius: 10px 10px 0 0; color: white;">
+            <h2 style="margin: 0;">Account Deleted</h2>
+          </div>
+          <div style="border: 1px solid #e1e1e1; border-top: none; padding: 20px; border-radius: 0 0 10px 10px;">
+            <p>Hello <strong>${name}</strong>,</p>
+            <p>Your account on Planora has been permanently deleted by an administrator.</p>
+            <p>You will no longer be able to access the system. If you believe this is a mistake, please contact support.</p>
+          </div>
+        </div>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending delete email:", error);
+  }
+};
+
+export const sendAccountStatusChangedEmail = async (email, name, status) => {
+  try {
+    const isBanned = status === "banned" || status === "blocked";
+    const color = isBanned ? "#ef4444" : "#10b981"; // Red for ban, Green for unban
+    const title = isBanned ? "Account Suspended" : "Account Reactivated";
+    const message = isBanned
+      ? "Your account has been suspended. You cannot access the system until further notice."
+      : "Good news! Your account has been reactivated. You can now log in.";
+
+    const mailOptions = {
+      from: `"PLANORA Admin" <${process.env.SENDER_EMAIL}>`,
+      to: email,
+      subject: `Account Status Update: ${title}`,
+      html: `
+         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: ${color}; padding: 20px; border-radius: 10px 10px 0 0; color: white;">
+            <h2 style="margin: 0;">${title}</h2>
+          </div>
+          <div style="border: 1px solid #e1e1e1; border-top: none; padding: 20px; border-radius: 0 0 10px 10px;">
+            <p>Hello <strong>${name}</strong>,</p>
+            <p>${message}</p>
+          </div>
+        </div>
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending status email:", error);
   }
 };

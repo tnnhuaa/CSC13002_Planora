@@ -36,9 +36,24 @@ const Modal = ({ isOpen, onClose, children, title, subtitle }) => {
 
 // --- EditIssue Component ---
 
-const priorityOptions = ["Low", "Medium", "High"];
-const typeOptions = ["Story", "Feature", "Bug"];
-const statusOptions = ["To Do", "In Progress", "Review", "Done"];
+const PRIORITY_OPTIONS = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+
+const TYPE_OPTIONS = [
+  { value: "task", label: "Task" },
+  { value: "bug", label: "Bug" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "todo", label: "To Do" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "in_review", label: "In Review" },
+  { value: "done", label: "Done" },
+];
+
 const sprintOptions = ["Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4"];
 // Note: You would typically fetch available users dynamically
 const mockAssignedUsers = ["Bob Smith", "Alice Johnson", "Charlie Brown"];
@@ -48,15 +63,12 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    priority: "Medium",
-    type: "Feature",
-    status: "To Do",
-    storyPoints: "",
-    sprint: "",
+    priority: "medium",
+    type: "task",
+    status: "todo",
     dueDate: "",
-    assignedUsers: [],
-    tags: [],
   });
+
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
@@ -64,14 +76,12 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
       setFormData({
         title: issueData.title || "",
         description: issueData.description || "",
-        priority: issueData.priority || "Medium",
-        type: issueData.type || "Feature",
-        status: issueData.status || "To Do",
-        storyPoints: issueData.storyPoints || "5",
-        sprint: issueData.sprint || "Sprint 3",
-        dueDate: issueData.dueDate || new Date().toISOString().substring(0, 10), // Example: "YYYY-MM-DD"
-        assignedUsers: issueData.assignedUsers || ["Bob Smith"], // Mock data
-        tags: issueData.tags || ["UI/UX", "Frontend"], // Mock data
+        priority: issueData.priority || "medium",
+        type: issueData.type || "task",
+        status: issueData.status || "todo",
+        dueDate: issueData.due_date
+          ? new Date(issueData.due_date).toISOString().substring(0, 10)
+          : "",
       });
     }
   }, [issueData]);
@@ -107,16 +117,16 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 1. Prepare data (e.g., ensure correct format, merge with issueId)
+
+    // Merge updates with original ID
     const updatedIssue = {
-      ...issueData, // Preserve issueId and other meta-data
+      ...issueData,
       ...formData,
+      // Ensure date is formatted if needed, backend usually handles ISO strings fine
+      due_date: formData.dueDate,
     };
 
-    // 2. Call the update function passed from the parent
     onUpdateIssue(updatedIssue);
-
-    // 3. Close the modal
     onClose();
   };
 
@@ -172,9 +182,9 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
               onChange={handleChange}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
-              {priorityOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {PRIORITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -190,9 +200,9 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
               onChange={handleChange}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
-              {typeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -208,45 +218,9 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
               onChange={handleChange}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
-              {statusOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Story Points & Sprint Row */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Story Points */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Story Points
-            </label>
-            <input
-              type="number"
-              name="storyPoints"
-              value={formData.storyPoints}
-              onChange={handleChange}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-              placeholder="5"
-            />
-          </div>
-          {/* Sprint */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Sprint
-            </label>
-            <select
-              name="sprint"
-              value={formData.sprint}
-              onChange={handleChange}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            >
-              {sprintOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -265,75 +239,6 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
             onChange={handleChange}
             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
           />
-        </div>
-
-        {/* Assigned Users */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Assigned Users
-          </label>
-          <div className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm">
-            <p className="text-slate-600 dark:text-slate-400 mb-2">
-              {formData.assignedUsers.length} user(s) assigned
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {formData.assignedUsers.map((user, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 rounded-full text-xs font-medium cursor-pointer"
-                  onClick={() => handleUserRemove(user)}
-                >
-                  <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-xs text-white font-medium">
-                    {user
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </span>
-                  {user}
-                  <X size={12} className="text-blue-500" />
-                </span>
-              ))}
-            </div>
-            {/* Note: User assignment typically uses a select/dropdown, omitted here for simplicity */}
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Tags
-          </label>
-          <div className="flex gap-2 mb-2 flex-wrap">
-            {formData.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center gap-2 px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-full text-xs font-medium cursor-pointer"
-                onClick={() => handleTagRemove(tag)}
-              >
-                {tag}
-                <X size={12} className="text-slate-500" />
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && (e.preventDefault(), handleTagAdd())
-              }
-              className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Add a tag..."
-            />
-            <button
-              type="button"
-              onClick={handleTagAdd}
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-            >
-              Add
-            </button>
-          </div>
         </div>
 
         {/* Footer Buttons */}

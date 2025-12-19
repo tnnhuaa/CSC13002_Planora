@@ -26,6 +26,8 @@ import TaskFilterBar from "../components/TaskFilterBar";
 import { UseTaskFilter } from "../hooks/UseTaskFilter";
 import CommentInput from "../components/CommentInput";
 import CommentText from "../components/CommentText";
+import EditIssue from "../components/EditIssue";
+import DeleteIssueConfirmation from "../components/DeleteIssueConfirmation";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -38,7 +40,6 @@ function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingMessage, setEditingMessage] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -46,6 +47,9 @@ function ProjectDetail() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
+  const [isDeleteIssueModalOpen, setIsDeleteIssueModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState(null);
 
   const {
     searchTerm,
@@ -280,16 +284,47 @@ function ProjectDetail() {
   };
 
   const handleEditIssue = (issue, e) => {
-    e.stopPropagation();
-    // TODO: Implement edit issue logic
-    console.log("Edit issue:", issue);
+    e.stopPropagation(); // Prevent clicking the card behind it
+    setSelectedIssue(issue);
+    setIsEditIssueModalOpen(true);
   };
 
-  const handleDeleteIssue = async (issue, e) => {
-    e.stopPropagation();
+  const handleUpdateIssueSubmit = async (updatedIssueData) => {
+    try {
+      const response = await issueService.updateIssue(
+        updatedIssueData._id,
+        updatedIssueData
+      );
 
-    //TODO: Implement delete issue logic
-    console.log("Delete issue:", issue);
+      setIssues((prevIssues) =>
+        prevIssues.map((issue) =>
+          issue._id === updatedIssueData._id
+            ? { ...issue, ...updatedIssueData }
+            : issue
+        )
+      );
+
+      setIsEditIssueModalOpen(false);
+      setSelectedIssue(null);
+    } catch (error) {
+      console.error("Failed to update issue:", error);
+      alert("Failed to update issue: " + error.message);
+    }
+  };
+
+  const handleDeleteIssue = (issue, e) => {
+    e.stopPropagation();
+    setSelectedIssue(issue);
+    setIsDeleteIssueModalOpen(true);
+  };
+
+  const handleConfirmDelete = (deletedIssueId) => {
+    setIssues((prevIssues) =>
+      prevIssues.filter((issue) => issue._id !== deletedIssueId)
+    );
+
+    setIsDeleteIssueModalOpen(false);
+    setSelectedIssue(null);
   };
 
   const getIssuesByStatus = (status) => {
@@ -630,6 +665,22 @@ function ProjectDetail() {
                           <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
                             {issue.title}
                           </p>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => handleEditIssue(issue, e)}
+                              className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
+                              title="Edit issue"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteIssue(issue, e)}
+                              className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                              title="Delete issue"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                           <div className="flex flex-wrap gap-2 mb-3">
                             <span
                               className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
@@ -1035,6 +1086,30 @@ function ProjectDetail() {
           </div>
         </div>
       )}
+
+      {selectedIssue && (
+        <EditIssue
+          isOpen={isEditIssueModalOpen}
+          onClose={() => {
+            setIsEditIssueModalOpen(false);
+            setSelectedIssue(null);
+          }}
+          issueData={selectedIssue}
+          onUpdateIssue={handleUpdateIssueSubmit}
+        />
+      )}
+
+      {/* Delete Issue Confirmation Modal */}
+      <DeleteIssueConfirmation
+        isOpen={isDeleteIssueModalOpen}
+        // CLEANUP: You only need the 'issue' prop based on the component we built
+        issue={selectedIssue}
+        onClose={() => {
+          setIsDeleteIssueModalOpen(false);
+          setSelectedIssue(null);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

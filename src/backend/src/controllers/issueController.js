@@ -177,20 +177,20 @@ class IssueController {
     }
   }
 
-  //   async deleteTask(req, res) {
-  //     try {
-  //       const { id } = req.params;
-  //       const currentUser = req.user;
+  async deleteIssue(req, res) {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user;
 
-  //       await taskService.deleteTask(id, currentUser);
+      await issueService.deleteIssue(id, currentUser);
 
-  //       return res.status(200).json({
-  //         message: "Delete task successfully!",
-  //       });
-  //     } catch (error) {
-  //       return res.status(400).json({ message: error.message });
-  //     }
-  //   }
+      return res.status(200).json({
+        message: "Delete issue successfully!",
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export const issueController = new IssueController();

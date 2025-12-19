@@ -24,11 +24,6 @@ router.get("/:id", authorize("user"), issueController.getIssueById);
 // Update
 router.put("/:id", authorize("user"), issueController.updateIssue);
 
-// Delete soon
-// router.delete(
-//   "/:id",
-//   authorize("project manager"),
-//   issueController.deleteissue
-// );
+router.delete("/:id", authorize("user"), issueController.deleteIssue);
 
 export default router;

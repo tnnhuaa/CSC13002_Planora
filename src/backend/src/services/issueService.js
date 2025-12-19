@@ -3,7 +3,9 @@ import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
 import userRepository from "../repositories/userRepository.js";
 class IssueService {
-  async checkIssuePermission(issueId, user) {
+  async checkIssuePermission(issueId, user, action = "edit") {
+    if (user.role === "admin") return true;
+
     const issue = await issueRepository.findById(issueId);
     if (!issue) throw new Error("Issue not found!");
 
@@ -12,25 +14,55 @@ class IssueService {
     if (!project)
       throw new Error("Project associated with this issue not found!");
 
-    const managerId = project.manager._id
-      ? project.manager._id.toString()
-      : project.manager.toString();
+    const isProjectOwner =
+      project.manager._id.toString() === user._id.toString();
+
+    const memberRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      user._id
+    );
+
+    const isProjectManager = memberRole === "manager";
+    const isProjectMember = memberRole === "member";
 
     const isAssignee =
       issue.assignee && issue.assignee._id.toString() === user._id.toString();
-
-    const isProjectManager = managerId === user._id.toString();
-
     const isReporter =
       issue.reporter && issue.reporter._id.toString() === user._id.toString();
 
-    if (!isAssignee && !isProjectManager && !isReporter) {
-      throw new Error(
-        "Access denied! You are not authorized to perform this action."
-      );
+    if (action === "delete") {
+      // Only Project Owner OR Project Managers can delete
+      if (!isProjectOwner && !isProjectManager) {
+        throw new Error(
+          "Access denied! Only Project Managers can delete issues."
+        );
+      }
+      return issue;
     }
 
-    return issue;
+    if (action === "edit") {
+      // Allowed: Owner, Manager, Member, Assignee, Reporter
+      // Blocked: Viewers (unless they are the reporter/assignee?), Non-members
+      const isAuthorized =
+        isProjectOwner ||
+        isProjectManager ||
+        isProjectMember ||
+        isAssignee ||
+        isReporter;
+
+      if (!isAuthorized) {
+        throw new Error(
+          "Access denied! You are not authorized to edit this issue."
+        );
+      }
+
+      // Optional: Explicitly block 'viewers' if they are not the assignee/reporter
+      if (memberRole === "viewer" && !isAssignee && !isReporter) {
+        throw new Error("Viewers cannot edit issues.");
+      }
+
+      return issue;
+    }
   }
 
   async create(issueData) {
@@ -135,17 +167,18 @@ class IssueService {
     return updatedIssue;
   }
 
-  // async deleteIssue(id, user) {
-  //     await this.checkIssuePermission(id, user);
+  async deleteIssue(id, user) {
+    await this.checkIssuePermission(id, user);
 
-  //     const deletedIssue = await issueRepository.delete(id);
+    // Assuming repository has a delete method
+    const deletedIssue = await issueRepository.delete(id);
 
-  //     if (!deletedIssue) {
-  //         throw new Error("Issue not found to delete!");
-  //     }
+    if (!deletedIssue) {
+      throw new Error("Issue not found to delete!");
+    }
 
-  //     return deletedIssue;
-  // }
+    return deletedIssue;
+  }
 }
 
 export const issueService = new IssueService();
