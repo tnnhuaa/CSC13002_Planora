@@ -5,7 +5,7 @@ export const UseTaskFilter = (tasks = []) => {
     
     const [filters, setFilters] = useState({
         type: [], 
-        status: [],
+        priority: [],
         assignees: [],
     });
     const [sortOrder, setSortOrder] = useState(null);
@@ -36,13 +36,13 @@ export const UseTaskFilter = (tasks = []) => {
             const matchesType = filterObj.type.length === 0 || 
                 (task.type && filterObj.type.includes(task.type));
 
-            const matchesStatus = filterObj.status.length === 0 || 
-                filterObj.status.includes(task.status);
+            const matchesPriority = filterObj.priority.length === 0 || 
+                filterObj.priority.includes(task.priority);
 
             const matchesAssignees = filterObj.assignees.length === 0 || 
                 (task.assignee?.username && filterObj.assignees.includes(task.assignee.username));
 
-            return matchesType && matchesStatus && matchesAssignees;
+            return matchesType && matchesPriority && matchesAssignees;
         });
     };
 
@@ -60,8 +60,8 @@ export const UseTaskFilter = (tasks = []) => {
     const applySortByDueDate = (tasksToSort, order) => {
         if (!order) return tasksToSort;
         return [...tasksToSort].sort((a, b) => {
-            const timeA = getTimeValue(a.dueDate);
-            const timeB = getTimeValue(b.dueDate);
+            const timeA = getTimeValue(a.due_date);
+            const timeB = getTimeValue(b.due_date);
             
             if (timeA === -1 && timeB !== -1) return 1;
             if (timeA !== -1 && timeB === -1) return -1;
@@ -82,8 +82,8 @@ export const UseTaskFilter = (tasks = []) => {
         return [...new Set(types)].sort();
     };
 
-    const getUniqueStatuses = () => {
-        return ["todo", "in_progress", "review", "done"];
+    const getUniquePriorities = () => {
+        return ["low", "medium", "high"];
     };
 
     const getUniqueAssignees = () => {
@@ -91,14 +91,13 @@ export const UseTaskFilter = (tasks = []) => {
         return [...new Set(assignees)].sort();
     };
 
-    const getStatusDisplay = (status) => {
+    const getPriorityDisplay = (priority) => {
         const map = {
-            todo: "To Do",
-            in_progress: "In Progress",
-            review: "Review",
-            done: "Done"
+            low: "Low",
+            medium: "Medium",
+            high: "High"
         };
-        return map[status] || status;
+        return map[priority] || priority;
     };
 
     const filteredAndSortedTasks = useMemo(() => {
@@ -123,9 +122,9 @@ export const UseTaskFilter = (tasks = []) => {
         handleFilterChange,
         setOpenFilter,
         getUniqueTypes,
-        getUniqueStatuses,
+        getUniquePriorities,
         getUniqueAssignees,
         toggleSortOrder,
-        getStatusDisplay 
+        getPriorityDisplay 
     };
 };

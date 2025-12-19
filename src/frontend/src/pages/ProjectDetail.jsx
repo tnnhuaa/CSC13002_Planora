@@ -61,10 +61,10 @@ function ProjectDetail() {
     handleFilterChange,
     setOpenFilter,
     getUniqueTypes,
-    getUniqueStatuses,
+    getUniquePriorities,
     getUniqueAssignees,
     toggleSortOrder,
-    getStatusDisplay,
+    getPriorityDisplay,
   } = UseTaskFilter(issues);
 
   const calculateDaysLeft = (dateString) => {
@@ -615,10 +615,10 @@ function ProjectDetail() {
             handleFilterChange={handleFilterChange}
             setOpenFilter={setOpenFilter}
             getUniqueTypes={getUniqueTypes}
-            getUniqueStatuses={getUniqueStatuses}
+            getUniquePriorities={getUniquePriorities}
             getUniqueAssignees={getUniqueAssignees}
             toggleSortOrder={toggleSortOrder}
-            getStatusDisplay={getStatusDisplay}
+            getPriorityDisplay={getPriorityDisplay}
           />
         </div>
 

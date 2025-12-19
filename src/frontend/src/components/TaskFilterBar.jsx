@@ -10,10 +10,10 @@ function TaskFilterBar({
     handleFilterChange,
     setOpenFilter,
     getUniqueTypes, 
-    getUniqueStatuses,
+    getUniquePriorities,
     getUniqueAssignees,
     toggleSortOrder,
-    getStatusDisplay,
+    getPriorityDisplay,
 }) {
     return (
         <div className="flex gap-3 mb-4 flex-wrap">
@@ -67,32 +67,32 @@ function TaskFilterBar({
             <div className="relative">
                 <button
                     onClick={() =>
-                        setOpenFilter(openFilter === "status" ? null : "status")
+                        setOpenFilter(openFilter === "priority" ? null : "priority")
                     }
                     className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 text-sm font-medium transition"
                 >
-                    {filters.status.length > 0
-                        ? `Status (${filters.status.length})`
-                        : "All Status"}
+                    {filters.priority.length > 0
+                        ? `Priority (${filters.priority.length})`
+                        : "All Priority"}
                     <ChevronDown size={14} />
                 </button>
-                {openFilter === "status" && (
+                {openFilter === "priority" && (
                     <div className="absolute top-full mt-2 left-0 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg z-10 min-w-[200px]">
-                        {getUniqueStatuses().map((status) => (
+                        {getUniquePriorities().map((priority) => (
                             <label
-                                key={status}
+                                key={priority}
                                 className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-600 cursor-pointer border-b border-slate-200 dark:border-slate-600 last:border-b-0"
                             >
                                 <input
                                     type="checkbox"
-                                    checked={filters.status.includes(status)}
+                                    checked={filters.priority.includes(priority)}
                                     onChange={() =>
-                                        handleFilterChange("status", status)
+                                        handleFilterChange("priority", priority)
                                     }
                                     className="w-4 h-4 rounded"
                                 />
                                 <span className="text-sm text-slate-700 dark:text-slate-300">
-                                    {getStatusDisplay(status)}
+                                    {getPriorityDisplay(priority)}
                                 </span>
                             </label>
                         ))}
