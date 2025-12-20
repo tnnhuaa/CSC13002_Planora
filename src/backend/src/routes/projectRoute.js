@@ -6,8 +6,6 @@ import { protectedRoute, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// TODO: Add authorization middleware ('manager' - 'member' - 'viewer')
-
 // Get all projects for current user
 router.get("/mine", protectedRoute, projectController.getUserProjects);
 
@@ -40,5 +38,11 @@ router.put(
 
 // Get project details
 router.get("/:projectId", protectedRoute, projectController.getProjectDetails);
+
+// Update project ('manager' only)
+router.put("/:projectId", protectedRoute, projectController.updateProject);
+
+// Delete project ('manager' only)
+router.delete("/:projectId", protectedRoute, projectController.deleteProject);
 
 export default router;
