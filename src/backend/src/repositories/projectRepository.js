@@ -34,6 +34,10 @@ class ProjectRepository {
   async updateProject(id, data, session = null) {
     return Project.findByIdAndUpdate(id, data, { new: true }).session(session);
   }
+
+  async deleteProject(id, session = null) {
+    return Project.findByIdAndDelete(id).session(session);
+  }
 }
 
 export const projectRepository = new ProjectRepository();

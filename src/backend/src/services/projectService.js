@@ -3,6 +3,7 @@ import { projectMembersRepository } from "../repositories/projectMembersReposito
 import { issueRepository } from "../repositories/issueRepository.js";
 import mongoose from "mongoose";
 import userRepository from "../repositories/userRepository.js";
+
 class ProjectService {
   async createProject(data, managerId) {
     try {
@@ -269,6 +270,64 @@ class ProjectService {
       .map((pm) => pm.project);
 
     return managedProjects;
+  }
+
+  async updateProject(userId, projectId, data) {
+    // Check if project exists
+    const project = await projectRepository.findProjectById(projectId);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    // Check if user is a manager of the project
+    const userRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      userId
+    );
+
+    if (userRole !== "manager") {
+      throw new Error("Only managers can update the project");
+    }
+
+    return await projectRepository.updateProject(projectId, data);
+  }
+
+  async deleteProject(userId, projectId) {
+    // Check if project exists
+    const project = await projectRepository.findProjectById(projectId);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    // Check if user is a manager of the project
+    const userRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      userId
+    );
+
+    if (userRole !== "manager") {
+      throw new Error("Only managers can delete the project");
+    }
+
+    // Remove all project members
+    const members = await projectMembersRepository.findMembersByProject(
+      projectId
+    );
+    await Promise.all(
+      members
+        .filter((member) => member.user)
+        .map(async (member) => {
+          await projectMembersRepository.removeMember(projectId, member.user._id);
+        })
+    );
+
+    // Remove all issues related to the project
+    const issues = await issueRepository.findByProjects(projectId);
+    await Promise.all(
+      issues.map(async (issue) => await issueRepository.delete(issue._id))
+    );
+
+    return projectRepository.deleteProject(projectId);
   }
 }
 

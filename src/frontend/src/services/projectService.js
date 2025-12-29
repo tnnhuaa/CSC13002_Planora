@@ -72,4 +72,23 @@ export const projectService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  updateProject: async (projectId, projectData) => {
+    try {
+      const response = await axiosInstance.put(
+        `${BASE_URL}/${projectId}`,
+        projectData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+  deleteProject: async (projectId) => {
+    try {
+      await axiosInstance.delete(`${BASE_URL}/${projectId}`);
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };

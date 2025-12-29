@@ -101,6 +101,37 @@ class ProjectController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  async updateProject(req, res) {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user.id;
+      const { name, description } = req.body;
+
+      const updatedProject = await projectService.updateProject(
+        userId,
+        projectId,
+        { name, description }
+      );
+
+      res.status(200).json(updatedProject);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async deleteProject(req, res) {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user.id;
+
+      await projectService.deleteProject(userId, projectId);
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 export const projectController = new ProjectController();
