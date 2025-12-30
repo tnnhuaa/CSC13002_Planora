@@ -149,7 +149,11 @@ export const signOut = async (req, res) => {
       // Remove refresh token from Session
       await Session.deleteOne({ refreshToken: token });
       // Remove cookie
-      res.clearCookie("refreshToken");
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+      });
     }
 
     return res.sendStatus(204);
