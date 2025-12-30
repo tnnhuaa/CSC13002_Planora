@@ -69,11 +69,11 @@ class IssueService {
     const { title, project, assignee, reporter } = issueData;
 
     // Validate input
-    if (!title || !project || !assignee || !reporter) {
-      throw new Error("Title, project, assignee, and reporter are required!");
+    if (!title || !project || !reporter) {
+      throw new Error("Title, project, and reporter are required!");
     }
 
-    await this.validateAssigneeNotBanned(assignee);
+    if (assignee) await this.validateAssigneeNotBanned(assignee);
 
     const projectExists = await projectRepository.findProjectById(project);
     if (!projectExists) {
@@ -91,6 +91,10 @@ class IssueService {
     const managerId = String(projectExists.manager._id);
     const allParticipantIds = new Set([...memberUserIds, managerId]);
 
+    if (!allParticipantIds.has(String(reporter))) {
+      throw new Error("Only project managers or members can create issues.");
+    }
+
     const reporterId = String(reporter);
     const assigneeId = String(assignee);
 
@@ -103,7 +107,7 @@ class IssueService {
 
     const assigneeIsParticipant = allParticipantIds.has(assigneeId);
 
-    if (!assigneeIsParticipant) {
+    if (assignee && !assigneeIsParticipant) {
       throw new Error("Assignee must be a project manager or team member.");
     }
 
@@ -141,6 +145,14 @@ class IssueService {
   async getIssuesByProject(projectIds) {
     const ids = Array.isArray(projectIds) ? projectIds : [projectIds];
     return await issueRepository.findByProjects(ids);
+  }
+
+  async getBacklog(projectId) {
+    return await issueRepository.findBacklogIssues(projectId);
+  }
+
+  async getBoard(projectId) {
+    return await issueRepository.findBoardIssues(projectId);
   }
 
   async updateIssue(id, updateData, user) {

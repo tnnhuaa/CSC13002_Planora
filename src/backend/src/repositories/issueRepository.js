@@ -23,7 +23,36 @@ class IssueRepository {
   async create(issueData) {
     issueData.key = await this.generateIssueKey(issueData.project);
 
+    const targetStatus = issueData.status || "backlog";
+    const lastIssue = await Issue.findOne({
+      project: issueData.project,
+      status: targetStatus,
+    }).sort({ createdAt: -1 });
+
+    issueData.listPosition = lastIssue ? lastIssue.listPosition + 1 : 1;
+    issueData.status = targetStatus;
+
     return await Issue.create(issueData);
+  }
+
+  async findBacklogIssues(projectId) {
+    return await Issue.find({
+      project: projectId,
+      status: "backlog",
+    })
+      .populate("assignee", "username email avatarURL")
+      .populate("reporter", "username email")
+      .sort({ listPosition: 1 }); // Sorted by custom order
+  }
+
+  async findBoardIssues(projectId) {
+    return await Issue.find({
+      project: projectId,
+      status: { $ne: "backlog" }, // Not Equal to Backlog
+    })
+      .populate("assignee", "username email avatarURL")
+      .populate("reporter", "username email")
+      .sort({ listPosition: 1 });
   }
 
   async findAll(filter = {}) {
