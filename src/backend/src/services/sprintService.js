@@ -38,7 +38,7 @@ class SprintService {
   }
 
   async createSprint(sprintData, userId) {
-    const { projectId, name, start_date, end_date } = sprintData;
+    const { projectId, name, goal, start_date, end_date } = sprintData;
     const project = await projectRepository.findProjectById(projectId);
     if (!project) {
       throw new Error("Project not found");
@@ -59,23 +59,7 @@ class SprintService {
       throw new Error("End date must be after start date");
     }
 
-    // Check for overlapping all sprints
-    const sprints = await sprintRepository.findAll({ project: projectId });
-    const hasOverlap = sprints.some((sprint) => {
-      return (
-        (startDate >= sprint.start_date && startDate <= sprint.end_date) ||
-        (endDate >= sprint.start_date && endDate <= sprint.end_date) ||
-        (startDate <= sprint.start_date && endDate >= sprint.end_date)
-      );
-    });
-
-    if (hasOverlap) {
-      throw new Error(
-        "Cannot create sprint with overlapping dates with an existing sprint"
-      );
-    }
-
-    return await sprintRepository.create({ project: projectId, name, start_date, end_date, status: "planning" });
+    return await sprintRepository.create({ project: projectId, name, goal, start_date, end_date, status: "planning" });
   }
 
   async getAllSprints(filter = {}) {
@@ -122,9 +106,9 @@ class SprintService {
       }
     }
 
-    // Prevent changing status from completed
-    if (sprint.status === "completed" && updateData.status !== "completed") {
-      throw new Error("Cannot change status of a completed sprint");
+    // Prevent changing status from completed, cancelled
+    if ((sprint.status === "completed" || sprint.status === "cancelled") && updateData.status !== sprint.status) {
+      throw new Error("Cannot change status of a completed or cancelled sprint");
     }
 
     return await sprintRepository.update(sprintId, { name, goal, start_date, end_date, status });
