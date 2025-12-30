@@ -34,6 +34,7 @@ const issueSchema = new mongoose.Schema(
     story_points: { type: Number },
     attachments: { type: [String] },
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
+    sprint: { type: Schema.Types.ObjectId, ref: "Sprint" },
   },
   { timestamps: true }
 );
