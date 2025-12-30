@@ -1,5 +1,6 @@
 import express from "express";
 import { connectDB } from "./config/db.js";
+import morgan from "morgan";
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import projectRoute from "./routes/projectRoute.js";
@@ -24,6 +25,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(morgan("dev"));
 
 // public routes
 app.use("/api/auth", authRoute);

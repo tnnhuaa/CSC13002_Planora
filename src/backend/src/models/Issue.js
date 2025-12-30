@@ -11,9 +11,11 @@ const issueSchema = new mongoose.Schema(
     description: { type: String },
     status: {
       type: String,
-      enum: ["todo", "in_progress", "in_review", "done"],
-      default: "todo",
+      enum: ["backlog", "todo", "in_progress", "in_review", "done"],
+      default: "backlog",
     },
+    listPosition: { type: Number, default: 0 }, // Drag and drop ordering
+    // sprint: { type: Schema.Types.ObjectId, ref: "Sprint" }, // Comming soon
     project: { type: Schema.Types.ObjectId, ref: "Project", required: true },
     priority: {
       type: String,
@@ -25,7 +27,7 @@ const issueSchema = new mongoose.Schema(
       enum: ["task", "bug"],
       default: "task",
     },
-    assignee: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    assignee: { type: Schema.Types.ObjectId, ref: "User" },
     reporter: { type: Schema.Types.ObjectId, ref: "User", required: true },
     start_date: { type: Date, default: Date.now },
     due_date: { type: Date },
