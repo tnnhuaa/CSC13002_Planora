@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
+import { showToast } from "../utils/toastUtils";
 
 // Schema Validation
 const signUpSchema = z
@@ -58,7 +59,7 @@ const UseSignUp = () => {
     const result = await signup(data.account, data.email, data.password);
 
     if (result.success) {
-      alert(result.message || "Account created successfully!");
+      showToast.success(result.message || "Account created successfully!");
       navigate("/signin");
     }
   };

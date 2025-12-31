@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
+import { showToast } from "../utils/toastUtils";
 
 function Projects() {
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ function Projects() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name) {
-      alert("Project Name is required!");
+      showToast.error("Project Name is required!");
       return;
     }
     try {
@@ -105,8 +106,10 @@ function Projects() {
       setSearchQuery("");
 
       await fetchProjects();
+      showToast.success("Project created successfully!");
     } catch (error) {
       console.error("Failed to create project:", error);
+      showToast.error("Failed to create project. Please try again.");
     }
   };
 
@@ -173,8 +176,10 @@ function Projects() {
         setProjects(res.data || []);
 
         await fetchProjects();
+        showToast.success("Project deleted successfully!");
       } catch (error) {
         console.error("Failed to delete project:", error);
+        showToast.error("Failed to delete project. Please try again.");
       }
     }
   };
@@ -191,7 +196,7 @@ function Projects() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editFormData.name) {
-      alert("Project Name is required!");
+      showToast.error("Project Name is required!");
       return;
     }
     try {
@@ -200,9 +205,10 @@ function Projects() {
       setEditingProject(null);
       setEditFormData({ name: "", description: "" });
       await fetchProjects();
+      showToast.success("Project updated successfully!");
     } catch (error) {
       console.error("Failed to update project:", error);
-      alert("Failed to update project. Please try again.");
+      showToast.error("Failed to update project. Please try again.");
     }
   };
 
