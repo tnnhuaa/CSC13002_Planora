@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { userService } from "../../services/userService";
+import { showToast } from "../../utils/toastUtils";
 
 export const useUserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -137,7 +138,7 @@ export const useUserManagement = () => {
       setIsAddUserModalOpen(false);
       return { success: true };
     } catch (err) {
-      alert(err.message || "Failed to create user");
+      showToast.error(err.message || "Failed to create user");
       return { success: false, error: err.message };
     }
   };
@@ -162,7 +163,7 @@ export const useUserManagement = () => {
       setIsEditUserModalOpen(false);
       setSelectedUser(null);
     } catch (err) {
-      alert(err.message || "Failed to update user");
+      showToast.error(err.message || "Failed to update user");
       return { success: false, error: err.message };
     }
   };
@@ -196,7 +197,7 @@ export const useUserManagement = () => {
       setSelectedUser(null);
       return { success: true };
     } catch (err) {
-      alert(err.message || "Failed to change user status");
+      showToast.error(err.message || "Failed to change user status");
       return { success: false, error: err.message };
     }
   };

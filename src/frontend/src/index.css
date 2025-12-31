@@ -4,3 +4,45 @@
 @theme {
   --color-primary: var(--primary);
 }
+
+.Toastify__toast {
+  border-radius: 8px;
+  font-family: inherit;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.Toastify__progress-bar {
+  height: 4px;
+}
+
+.toastProgress {
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.7),
+    rgba(255, 255, 255, 0.9)
+  ) !important;
+}
+
+.dark .Toastify__toast {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .Toastify__toast--success,
+.dark .Toastify__toast--error,
+.dark .Toastify__toast--warning,
+.dark .Toastify__toast--info {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-left: 4px solid;
+}
+
+.dark .Toastify__toast--success { border-color: #4ade80; }
+.dark .Toastify__toast--error { border-color: #ef4444; }
+.dark .Toastify__toast--warning { border-color: #eab308; }
+.dark .Toastify__toast--info { border-color: #3b82f6; }
+
+.dark .Toastify__close-button {
+  color: #f1f5f9;
+  opacity: 0.7;
+}
