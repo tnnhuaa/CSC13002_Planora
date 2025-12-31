@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { issueService } from "../services/issueService";
+import { showToast } from "../utils/toastUtils";
 
 export const useDashboard = () => {
     const [activeTab, setActiveTab] = useState("kanban");
@@ -122,7 +123,7 @@ export const useDashboard = () => {
             }));
         } catch (error) {
             console.error("Failed to create issue:", error);
-            alert(
+            showToast.error(
                 "Failed to create issue. Please check if Project is selected."
             );
         }

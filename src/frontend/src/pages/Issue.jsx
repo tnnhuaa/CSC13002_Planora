@@ -13,6 +13,7 @@ import {
 import { issueService } from "../services/issueService";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
+import { showToast } from "../utils/toastUtils";
 
 function Issues() {
   const [issues, setIssues] = useState([]);
@@ -110,7 +111,7 @@ function Issues() {
     try {
       // Validate
       if (!formData.project) {
-        alert("Please select a project");
+        showToast.error("Please select a project");
         return;
       }
 
@@ -134,7 +135,7 @@ function Issues() {
       setIssues(res.data || []);
     } catch (error) {
       console.error("Failed to create issue:", error);
-      alert(error.message || "Failed to create issue");
+      showToast.error(error.message || "Failed to create issue");
     }
   };
 

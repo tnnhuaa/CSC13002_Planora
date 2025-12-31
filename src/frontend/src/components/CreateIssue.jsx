@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { projectService } from "../services/projectService"; // Import service
+import { showToast } from "../utils/toastUtils";
 
 const CreateIssue = ({
   isOpen,
@@ -65,6 +66,7 @@ const CreateIssue = ({
             }
           } catch (error) {
             console.error("Failed to load projects", error);
+            showToast.error("Failed to load projects. Please try again.");
           }
         };
         fetchProjects();
@@ -76,7 +78,7 @@ const CreateIssue = ({
     setError("");
     if (!formData.title.trim()) return;
     if (!formData.project) {
-      alert("Please select a project");
+      showToast.error("Please select a project");
       return;
     }
 

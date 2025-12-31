@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
+import { showToast } from "../utils/toastUtils";
 
 // Schema: Email + OTP + New Password + Confirm
 const forgotSchema = z
@@ -65,7 +66,7 @@ const UseForgotPassword = () => {
     if (result.success) {
       setOtpSent(true);
       setCurrentEmail(email);
-      alert(result.message || "OTP sent to your email");
+      showToast.success(result.message || "OTP sent to your email");
     }
   };
 
@@ -75,7 +76,7 @@ const UseForgotPassword = () => {
     const result = await resetPassword(data.email, data.otp, data.password);
 
     if (result.success) {
-      alert(result.message || "Password reset successfully!");
+      showToast.success(result.message || "Password reset successfully!");
       navigate("/signin");
     }
   };

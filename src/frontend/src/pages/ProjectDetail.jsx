@@ -28,6 +28,7 @@ import CommentInput from "../components/CommentInput";
 import CommentText from "../components/CommentText";
 import EditIssue from "../components/EditIssue";
 import DeleteIssueConfirmation from "../components/DeleteIssueConfirmation";
+import { showToast } from "../utils/toastUtils";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -116,9 +117,10 @@ function ProjectDetail() {
       await fetchProjectDetails();
 
       setIsIssueModalOpen(false);
+      showToast.success("Issue created successfully");
     } catch (error) {
       console.error("Failed to create issue:", error);
-      alert("Failed to create issue");
+      showToast.error("Failed to create issue");
     }
   };
 
@@ -140,6 +142,7 @@ function ProjectDetail() {
       setComments(response.data || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
+      showToast.error("Failed to fetch comments");
     } finally {
       setLoadingComments(false);
     }
@@ -152,8 +155,9 @@ function ProjectDetail() {
       await commentService.createComment(selectedIssue._id, newComment.trim());
       setNewComment("");
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment added successfully");
     } catch (error) {
-      alert("Failed to add comment");
+      showToast.error("Failed to add comment");
     }
   };
 
@@ -170,9 +174,10 @@ function ProjectDetail() {
       setEditingCommentId(null);
       setEditingMessage("");
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment updated successfully");
     } catch (error) {
       console.error("Failed to update comment:", error);
-      alert(error.message || "Failed to update comment");
+      showToast.error(error.message || "Failed to update comment");
     }
   };
 
@@ -182,9 +187,10 @@ function ProjectDetail() {
     try {
       await commentService.deleteComment(commentId);
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment deleted successfully");
     } catch (error) {
       console.error("Failed to delete comment:", error);
-      alert(error.message || "Failed to delete comment");
+      showToast.error(error.message || "Failed to delete comment");
     }
   };
 
@@ -255,7 +261,7 @@ function ProjectDetail() {
   const handleAddMemberSubmit = async (e) => {
     e.preventDefault();
     if (selectedMembers.length === 0) {
-      alert("Please select at least one member!");
+      showToast.error("Please select at least one member!");
       return;
     }
     try {
@@ -273,7 +279,7 @@ function ProjectDetail() {
       setSearchQuery("");
     } catch (error) {
       console.error("Failed to add members:", error);
-      alert("Failed to add members");
+      showToast.error("Failed to add members");
     }
   };
 
@@ -306,9 +312,10 @@ function ProjectDetail() {
 
       setIsEditIssueModalOpen(false);
       setSelectedIssue(null);
+      showToast.success("Issue updated successfully");
     } catch (error) {
       console.error("Failed to update issue:", error);
-      alert("Failed to update issue: " + error.message);
+      showToast.error("Failed to update issue: " + error.message);
     }
   };
 
