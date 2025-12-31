@@ -14,6 +14,10 @@ import {
   Trash2,
   Edit2,
   CheckCircle,
+  LayoutGrid,
+  List,
+  Target,
+  ChevronRight,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -28,6 +32,7 @@ import CommentInput from "../components/CommentInput";
 import CommentText from "../components/CommentText";
 import EditIssue from "../components/EditIssue";
 import DeleteIssueConfirmation from "../components/DeleteIssueConfirmation";
+import CreateSprint from "../components/CreateSprint";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -50,6 +55,9 @@ function ProjectDetail() {
   const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
   const [isDeleteIssueModalOpen, setIsDeleteIssueModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
+  const [expandedSprints, setExpandedSprints] = useState({ "sprint-3": true }); // Track which sprints are expanded
+  const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
 
   const {
     searchTerm,
@@ -377,6 +385,100 @@ function ProjectDetail() {
     return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
   };
 
+  // Mock data for sprints
+  const mockSprintsData = [
+    {
+      id: "sprint-3",
+      name: "Sprint 3",
+      status: "current",
+      tasksCompleted: 0,
+      tasksTotal: 4,
+      pointsCompleted: 0,
+      pointsTotal: 21,
+      progress: 0,
+      issues: [
+        {
+          id: "PLAN-001",
+          title: "Design new login page",
+          priority: "high",
+          type: "Feature",
+          assignee: "AJ",
+          dueDate: "2025-01-03",
+          status: "Due Soon",
+        },
+        {
+          id: "PLAN-002",
+          title: "API integration for user data",
+          priority: "medium",
+          type: "Feature",
+          assignee: "CW",
+          dueDate: "2025-01-07",
+          status: "Jan 7",
+        },
+        {
+          id: "PLAN-003",
+          title: "Fix navigation menu bug",
+          priority: "high",
+          type: "Bug",
+          assignee: "AJ",
+          dueDate: "2025-01-03",
+          status: "Due Soon",
+        },
+        {
+          id: "PLAN-004",
+          title: "Implement dark mode",
+          priority: "medium",
+          type: "Feature",
+          assignee: "BS",
+          dueDate: "2025-01-10",
+          status: "Jan 10",
+        },
+      ],
+    },
+    {
+      id: "sprint-2",
+      name: "Sprint 2",
+      status: "completed",
+      tasksCompleted: 1,
+      tasksTotal: 1,
+      pointsCompleted: 13,
+      pointsTotal: 13,
+      progress: 100,
+      issues: [],
+    },
+    {
+      id: "sprint-1",
+      name: "Sprint 1",
+      status: "completed",
+      tasksCompleted: 0,
+      tasksTotal: 0,
+      pointsCompleted: 0,
+      pointsTotal: 0,
+      progress: 0,
+      issues: [],
+    },
+  ];
+
+  const toggleSprint = (sprintId) => {
+    setExpandedSprints((prev) => ({
+      ...prev,
+      [sprintId]: !prev[sprintId],
+    }));
+  };
+
+  const handleCreateSprintSubmit = async (formData) => {
+    try {
+      // TODO: Implement API call to create sprint
+      console.log("Creating sprint:", formData);
+      alert("Sprint created successfully!");
+      // After successful creation, you would refresh the sprints data
+      setIsCreateSprintModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create sprint:", error);
+      alert("Failed to create sprint");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -591,152 +693,455 @@ function ProjectDetail() {
 
       {/* Issues/Issues Section */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Issues ({issues.length})
-          </h3>
+        {/* Tab Navigation */}
+        <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl p-1 inline-flex gap-1 mb-6">
           <button
-            onClick={() => setIsIssueModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+            onClick={() => setActiveTab("issues")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "issues"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
           >
-            <Plus size={16} />
-            Create Issue
+            <LayoutGrid size={16} />
+            Issues
+          </button>
+          <button
+            onClick={() => setActiveTab("sprints")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "sprints"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <List size={16} />
+            Sprints
+          </button>
+          <button
+            onClick={() => setActiveTab("backlog")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "backlog"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Target size={16} />
+            Backlog
           </button>
         </div>
 
-        {/* Filters and Search */}
-        <div className="flex gap-3 mb-4 flex-wrap">
-          <TaskFilterBar
-            searchTerm={searchTerm}
-            filters={filters}
-            sortOrder={sortOrder}
-            openFilter={openFilter}
-            setSearchTerm={setSearchTerm}
-            handleFilterChange={handleFilterChange}
-            setOpenFilter={setOpenFilter}
-            getUniqueTypes={getUniqueTypes}
-            getUniquePriorities={getUniquePriorities}
-            getUniqueAssignees={getUniqueAssignees}
-            toggleSortOrder={toggleSortOrder}
-            getPriorityDisplay={getPriorityDisplay}
-          />
-        </div>
+        {/* Issues Tab Content */}
+        {activeTab === "issues" && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Issues ({issues.length})
+              </h3>
+              <button
+                onClick={() => setIsIssueModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus size={16} />
+                Create Issue
+              </button>
+            </div>
 
-        {/* Kanban Board */}
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
-            {["To Do", "In Progress", "Review", "Done"].map((status) => {
-              const statusIssues = getIssuesByStatus(
-                status === "To Do"
-                  ? "todo"
-                  : status === "In Progress"
-                  ? "in_progress"
-                  : status === "Review"
-                  ? "in_review"
-                  : "done"
-              );
+            {/* Filters and Search */}
+            <div className="flex gap-3 mb-4 flex-wrap">
+              <TaskFilterBar
+                searchTerm={searchTerm}
+                filters={filters}
+                sortOrder={sortOrder}
+                openFilter={openFilter}
+                setSearchTerm={setSearchTerm}
+                handleFilterChange={handleFilterChange}
+                setOpenFilter={setOpenFilter}
+                getUniqueTypes={getUniqueTypes}
+                getUniquePriorities={getUniquePriorities}
+                getUniqueAssignees={getUniqueAssignees}
+                toggleSortOrder={toggleSortOrder}
+                getPriorityDisplay={getPriorityDisplay}
+              />
+            </div>
 
-              return (
-                <div key={status} className="w-64 flex flex-col gap-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-slate-900 dark:text-white text-sm">
-                      {status}
-                    </h4>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
-                      {statusIssues.length}
-                    </span>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
-                    {statusIssues.map((issue) => {
-                      const daysLeft = calculateDaysLeft(issue.due_date);
-                      const issueOver = daysLeft !== null && daysLeft < 0;
-                      console.log(issueOver);
-                      return (
-                        <div
-                          key={issue._id}
-                          onClick={() => handleIssueClick(issue)}
-                          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                              {issue.issueId}
-                            </p>
-                          </div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
-                            {issue.title}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => handleEditIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
-                              title="Edit issue"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
-                              title="Delete issue"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
-                                issue.priority
-                              )}`}
-                            >
-                              {issue.priority}
-                            </span>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
-                                issue.type
-                              )}`}
-                            >
-                              {issue.type}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
+            {/* Kanban Board */}
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
+                {["To Do", "In Progress", "Review", "Done"].map((status) => {
+                  const statusIssues = getIssuesByStatus(
+                    status === "To Do"
+                      ? "todo"
+                      : status === "In Progress"
+                      ? "in_progress"
+                      : status === "Review"
+                      ? "in_review"
+                      : "done"
+                  );
+
+                  return (
+                    <div key={status} className="w-64 flex flex-col gap-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-slate-900 dark:text-white text-sm">
+                          {status}
+                        </h4>
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
+                          {statusIssues.length}
+                        </span>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
+                        {statusIssues.map((issue) => {
+                          const daysLeft = calculateDaysLeft(issue.due_date);
+                          const issueOver = daysLeft !== null && daysLeft < 0;
+                          return (
                             <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                              style={{
-                                backgroundColor: generateAvatarColor(
-                                  issue.assignee?.username || "Unknown"
-                                ),
-                              }}
+                              key={issue._id}
+                              onClick={() => handleIssueClick(issue)}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
                             >
-                              {getAvatarInitial(
-                                issue.assignee?.username || "Unknown"
-                              )}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
+                                  {issue.title}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={(e) => handleEditIssue(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
+                                    title="Edit issue"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteIssue(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                                    title="Delete issue"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
+                                    issue.priority
+                                  )}`}
+                                >
+                                  {issue.priority}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
+                                    issue.type
+                                  )}`}
+                                >
+                                  {issue.type}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                  style={{
+                                    backgroundColor: generateAvatarColor(
+                                      issue.assignee?.username || "Unknown"
+                                    ),
+                                  }}
+                                >
+                                  {getAvatarInitial(
+                                    issue.assignee?.username || "Unknown"
+                                  )}
+                                </div>
+                                {issue.due_date && (
+                                  <span
+                                    className={`px-2 py-1 text-xs font-medium rounded-md border ${getDueDateColor(
+                                      issue.due_date
+                                    )}`}
+                                  >
+                                    {getDueDateLabel(issue.due_date)}
+                                  </span>
+                                )}
+                                {issueOver && (
+                                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                                    Expired
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            {issue.due_date && (
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-md border ${getDueDateColor(
-                                  issue.due_date
-                                )}`}
-                              >
-                                {getDueDateLabel(issue.due_date)}
-                              </span>
-                            )}
-                            {issueOver && (
-                              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
-                                Expired
-                              </span>
-                            )}
-                          </div>
+                          );
+                        })}
+                        <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
+                          <Plus size={16} className="mx-auto" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Sprints Tab Content */}
+        {activeTab === "sprints" && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Sprint Management
+              </h3>
+              <button
+                onClick={() => setIsCreateSprintModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus size={16} />
+                Create Sprint
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {mockSprintsData.map((sprint) => (
+                <div
+                  key={sprint.id}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                >
+                  {/* Sprint Header */}
+                  <button
+                    onClick={() => toggleSprint(sprint.id)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ChevronRight
+                        size={20}
+                        className={`text-slate-400 transition-transform ${
+                          expandedSprints[sprint.id] ? "rotate-90" : ""
+                        }`}
+                      />
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-semibold text-slate-900 dark:text-white">
+                          {sprint.name}
+                        </h4>
+                        {sprint.status === "current" && (
+                          <span className="px-2 py-1 bg-primary text-white text-xs font-medium rounded-lg">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
+                        {sprint.pointsCompleted}/{sprint.pointsTotal} points
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 w-48">
+                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all"
+                            style={{ width: `${sprint.progress}%` }}
+                          />
                         </div>
-                      );
-                    })}
-                    <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
-                      <Plus size={16} className="mx-auto" />
-                    </button>
-                  </div>
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 w-12 text-right">
+                          {sprint.progress}%
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Sprint Issues */}
+                  {expandedSprints[sprint.id] && sprint.issues.length > 0 && (
+                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                        {sprint.issues.map((issue) => (
+                          <div
+                            key={issue.id}
+                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition"
+                          >
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                              {issue.id}
+                            </p>
+                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                              {issue.title}
+                            </h5>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.priority === "high"
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                    : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
+                                }`}
+                              >
+                                {issue.priority.charAt(0).toUpperCase() +
+                                  issue.priority.slice(1)}
+                              </span>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.type === "Bug"
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                    : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                                }`}
+                              >
+                                {issue.type}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{
+                                  backgroundColor: generateAvatarColor(
+                                    issue.assignee
+                                  ),
+                                }}
+                              >
+                                {issue.assignee}
+                              </div>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.status === "Due Soon"
+                                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
+                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                }`}
+                              >
+                                {issue.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Backlog Tab Content */}
+        {activeTab === "backlog" && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Product Backlog
+              </h3>
+              <button
+                onClick={() => setIsCreateSprintModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus size={16} />
+                Create Sprint
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {mockSprintsData.map((sprint) => (
+                <div
+                  key={sprint.id}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                >
+                  {/* Sprint Header */}
+                  <button
+                    onClick={() => toggleSprint(sprint.id)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ChevronRight
+                        size={20}
+                        className={`text-slate-400 transition-transform ${
+                          expandedSprints[sprint.id] ? "rotate-90" : ""
+                        }`}
+                      />
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-semibold text-slate-900 dark:text-white">
+                          {sprint.name}
+                        </h4>
+                        {sprint.status === "current" && (
+                          <span className="px-2 py-1 bg-primary text-white text-xs font-medium rounded-lg">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
+                        {sprint.pointsCompleted}/{sprint.pointsTotal} points
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 w-48">
+                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all"
+                            style={{ width: `${sprint.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 w-12 text-right">
+                          {sprint.progress}%
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Sprint Issues */}
+                  {expandedSprints[sprint.id] && sprint.issues.length > 0 && (
+                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                        {sprint.issues.map((issue) => (
+                          <div
+                            key={issue.id}
+                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition"
+                          >
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                              {issue.id}
+                            </p>
+                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                              {issue.title}
+                            </h5>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.priority === "high"
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                    : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
+                                }`}
+                              >
+                                {issue.priority.charAt(0).toUpperCase() +
+                                  issue.priority.slice(1)}
+                              </span>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.type === "Bug"
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                    : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                                }`}
+                              >
+                                {issue.type}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{
+                                  backgroundColor: generateAvatarColor(
+                                    issue.assignee
+                                  ),
+                                }}
+                              >
+                                {issue.assignee}
+                              </div>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                  issue.status === "Due Soon"
+                                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
+                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                }`}
+                              >
+                                {issue.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Comment Section */}
@@ -1109,6 +1514,13 @@ function ProjectDetail() {
           setSelectedIssue(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* CREATE SPRINT MODAL */}
+      <CreateSprint
+        isOpen={isCreateSprintModalOpen}
+        onClose={() => setIsCreateSprintModalOpen(false)}
+        onCreateSprint={handleCreateSprintSubmit}
       />
     </div>
   );
