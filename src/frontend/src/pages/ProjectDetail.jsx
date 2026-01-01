@@ -61,6 +61,7 @@ function ProjectDetail() {
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
   const [expandedSprints, setExpandedSprints] = useState({ "sprint-3": true }); // Track which sprints are expanded
+  const [isBacklogExpanded, setIsBacklogExpanded] = useState(true); // Track if unassigned backlog is expanded
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
   const [openSprintMenu, setOpenSprintMenu] = useState(null);
   const [sprintsData, setSprintsData] = useState([]);
@@ -598,6 +599,31 @@ function ProjectDetail() {
       ...prev,
       [sprintId]: !prev[sprintId],
     }));
+  };
+
+  // Get issues that are not assigned to any sprint
+  const getUnassignedIssues = () => {
+    const assignedIssueIds = new Set();
+    
+    // Collect all issue IDs that are assigned to sprints
+    sprintsData.forEach(sprint => {
+      if (sprint.issues && Array.isArray(sprint.issues)) {
+        sprint.issues.forEach(issue => {
+          assignedIssueIds.add(issue._id || issue.id);
+        });
+      }
+    });
+    
+    mockSprintsData.forEach(sprint => {
+      if (sprint.issues && Array.isArray(sprint.issues)) {
+        sprint.issues.forEach(issue => {
+          assignedIssueIds.add(issue._id || issue.id);
+        });
+      }
+    });
+    
+    // Return issues not in any sprint
+    return issues.filter(issue => !assignedIssueIds.has(issue._id));
   };
 
   const handleStartSprint = (sprintId) => {
@@ -1356,6 +1382,91 @@ function ProjectDetail() {
             </div>
 
             <div className="space-y-3">
+              {/* Backlog Section */}
+              {getUnassignedIssues().length > 0 && (
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+                  {/* Backlog Header */}
+                  <button
+                    onClick={() => setIsBacklogExpanded(!isBacklogExpanded)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ChevronRight
+                        size={20}
+                        className={`text-slate-400 transition-transform ${
+                          isBacklogExpanded ? "rotate-90" : ""
+                        }`}
+                      />
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-semibold text-slate-900 dark:text-white">
+                          Backlog
+                        </h4>
+                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg">
+                          Not in Sprint
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {getUnassignedIssues().length} {getUnassignedIssues().length === 1 ? 'issue' : 'issues'}
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Unassigned Issues List */}
+                  {isBacklogExpanded && (
+                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                        {getUnassignedIssues().map((issue) => (
+                          <div
+                            key={issue._id}
+                            onClick={() => handleIssueClick(issue)}
+                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition cursor-pointer"
+                          >
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                              {issue._id?.slice(-6) || 'N/A'}
+                            </p>
+                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                              {issue.title}
+                            </h5>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(issue.priority)}`}
+                              >
+                                {issue.priority?.charAt(0).toUpperCase() + issue.priority?.slice(1)}
+                              </span>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${getTypeColor(issue.type)}`}
+                              >
+                                {issue.type}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{
+                                  backgroundColor: generateAvatarColor(
+                                    issue.assignee?.username || "Unassigned"
+                                  ),
+                                }}
+                              >
+                                {getAvatarInitial(issue.assignee?.username || "U")}
+                              </div>
+                              {issue.due_date && (
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${getDueDateColor(issue.due_date)}`}
+                                >
+                                  {getDueDateLabel(issue.due_date)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sprints Section */}
               {mockSprintsData.map((sprint) => (
                 <div
                   key={sprint.id}
