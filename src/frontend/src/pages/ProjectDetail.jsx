@@ -18,6 +18,9 @@ import {
   List,
   Target,
   ChevronRight,
+  Play,
+  BarChart,
+  ArrowLeft,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -59,6 +62,8 @@ function ProjectDetail() {
   const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
   const [expandedSprints, setExpandedSprints] = useState({ "sprint-3": true }); // Track which sprints are expanded
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
+  const [openSprintMenu, setOpenSprintMenu] = useState(null);
+  const [sprintsData, setSprintsData] = useState([]);
 
   const {
     searchTerm,
@@ -392,12 +397,75 @@ function ProjectDetail() {
     return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
   };
 
-  // Mock data for sprints
+  // Mock data for sprints - aligned with backend Sprint schema
   const mockSprintsData = [
+    {
+      id: "sprint-4",
+      name: "Sprint 4",
+      goal: "Implement core features for user engagement",
+      status: "planning", // Backend enum: planning, active, completed, cancelled
+      start_date: "2025-01-13",
+      end_date: "2025-01-27",
+      tasksCompleted: 0,
+      tasksTotal: 5,
+      pointsCompleted: 0,
+      pointsTotal: 28,
+      progress: 0,
+      issues: [
+        {
+          id: "PLAN-011",
+          title: "Implement notification system",
+          priority: "high",
+          type: "Feature",
+          assignee: "MK",
+          dueDate: "2025-01-15",
+          status: "Jan 15",
+        },
+        {
+          id: "PLAN-012",
+          title: "Add export functionality",
+          priority: "medium",
+          type: "Feature",
+          assignee: "LT",
+          dueDate: "2025-01-18",
+          status: "Jan 18",
+        },
+        {
+          id: "PLAN-013",
+          title: "Optimize database queries",
+          priority: "high",
+          type: "Enhancement",
+          assignee: "AJ",
+          dueDate: "2025-01-16",
+          status: "Jan 16",
+        },
+        {
+          id: "PLAN-014",
+          title: "Add user permissions",
+          priority: "medium",
+          type: "Feature",
+          assignee: "CW",
+          dueDate: "2025-01-20",
+          status: "Jan 20",
+        },
+        {
+          id: "PLAN-015",
+          title: "Fix mobile responsiveness",
+          priority: "high",
+          type: "Bug",
+          assignee: "BS",
+          dueDate: "2025-01-14",
+          status: "Jan 14",
+        },
+      ],
+    },
     {
       id: "sprint-3",
       name: "Sprint 3",
-      status: "current",
+      goal: "Complete authentication and UI improvements",
+      status: "active", // Backend enum: planning, active, completed, cancelled
+      start_date: "2024-12-30",
+      end_date: "2025-01-13",
       tasksCompleted: 0,
       tasksTotal: 4,
       pointsCompleted: 0,
@@ -445,32 +513,159 @@ function ProjectDetail() {
     {
       id: "sprint-2",
       name: "Sprint 2",
-      status: "completed",
-      tasksCompleted: 1,
-      tasksTotal: 1,
-      pointsCompleted: 13,
-      pointsTotal: 13,
+      goal: "Setup infrastructure and core features",
+      status: "completed", // Backend enum: planning, active, completed, cancelled
+      start_date: "2024-12-16",
+      end_date: "2024-12-30",
+      tasksCompleted: 3,
+      tasksTotal: 3,
+      pointsCompleted: 18,
+      pointsTotal: 18,
       progress: 100,
-      issues: [],
+      issues: [
+        {
+          id: "PLAN-007",
+          title: "Setup CI/CD pipeline",
+          priority: "high",
+          type: "Feature",
+          assignee: "AJ",
+          dueDate: "2024-12-28",
+          status: "Completed",
+        },
+        {
+          id: "PLAN-008",
+          title: "Implement authentication",
+          priority: "high",
+          type: "Feature",
+          assignee: "CW",
+          dueDate: "2024-12-30",
+          status: "Completed",
+        },
+        {
+          id: "PLAN-009",
+          title: "Create project dashboard",
+          priority: "medium",
+          type: "Feature",
+          assignee: "BS",
+          dueDate: "2024-12-29",
+          status: "Completed",
+        },
+      ],
     },
     {
       id: "sprint-1",
       name: "Sprint 1",
-      status: "completed",
-      tasksCompleted: 0,
-      tasksTotal: 0,
-      pointsCompleted: 0,
-      pointsTotal: 0,
-      progress: 0,
-      issues: [],
+      goal: "Project foundation and architecture",
+      status: "completed", // Backend enum: planning, active, completed, cancelled
+      start_date: "2024-12-02",
+      end_date: "2024-12-16",
+      tasksCompleted: 2,
+      tasksTotal: 2,
+      pointsCompleted: 13,
+      pointsTotal: 13,
+      progress: 100,
+      issues: [
+        {
+          id: "PLAN-005",
+          title: "Project initialization",
+          priority: "high",
+          type: "Feature",
+          assignee: "AJ",
+          dueDate: "2024-12-15",
+          status: "Completed",
+        },
+        {
+          id: "PLAN-006",
+          title: "Database schema design",
+          priority: "high",
+          type: "Feature",
+          assignee: "MK",
+          dueDate: "2024-12-18",
+          status: "Completed",
+        },
+      ],
     },
   ];
+
+  // Initialize sprints data
+  useEffect(() => {
+    setSprintsData(mockSprintsData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleSprint = (sprintId) => {
     setExpandedSprints((prev) => ({
       ...prev,
       [sprintId]: !prev[sprintId],
     }));
+  };
+
+  const handleStartSprint = (sprintId) => {
+    setSprintsData((prevSprints) =>
+      prevSprints.map((sprint) => {
+        if (sprint.id === sprintId) {
+          // Update status from 'planning' to 'active' and set start_date to today
+          return { 
+            ...sprint, 
+            status: "active",
+            start_date: new Date().toISOString().split('T')[0] // Update start date to today
+          };
+        }
+        // Set any other active sprint to completed
+        if (sprint.status === "active") {
+          return { 
+            ...sprint, 
+            status: "completed",
+            end_date: new Date().toISOString().split('T')[0] // Update end date to today
+          };
+        }
+        return sprint;
+      })
+    );
+    showToast("success", "Sprint started successfully!");
+    console.log(`Starting sprint: ${sprintId}`);
+    // TODO: Add API call here - POST /api/sprints/:id/start
+  };
+
+  const handleCompleteSprint = (sprintId) => {
+    setSprintsData((prevSprints) =>
+      prevSprints.map((sprint) =>
+        sprint.id === sprintId
+          ? { 
+              ...sprint, 
+              status: "completed", 
+              progress: 100,
+              end_date: new Date().toISOString().split('T')[0] // Update end date to today
+            }
+          : sprint
+      )
+    );
+    showToast("success", "Sprint completed successfully!");
+    console.log(`Completing sprint: ${sprintId}`);
+    // TODO: Add API call here - POST /api/sprints/:id/complete
+  };
+
+  const handleEditSprint = (sprint) => {
+    console.log("Edit sprint:", sprint);
+    showToast("info", "Edit sprint feature coming soon!");
+    // TODO: Implement edit sprint modal
+  };
+
+  const handleDeleteSprint = (sprint) => {
+    if (window.confirm(`Are you sure you want to delete ${sprint.name}?`)) {
+      setSprintsData((prevSprints) =>
+        prevSprints.filter((s) => s.id !== sprint.id)
+      );
+      showToast("success", "Sprint deleted successfully!");
+      console.log("Delete sprint:", sprint.id);
+      // TODO: Add API call to delete sprint
+    }
+  };
+
+  const handleViewSprintReport = (sprint) => {
+    console.log("View report for sprint:", sprint);
+    showToast("info", "Sprint report view coming soon!");
+    // TODO: Implement sprint report view
   };
 
   const handleCreateSprintSubmit = async (formData) => {
@@ -903,17 +1098,17 @@ function ProjectDetail() {
             </div>
 
             <div className="space-y-3">
-              {mockSprintsData.map((sprint) => (
+              {sprintsData.map((sprint) => (
                 <div
                   key={sprint.id}
                   className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
                 >
                   {/* Sprint Header */}
-                  <button
-                    onClick={() => toggleSprint(sprint.id)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-                  >
-                    <div className="flex items-center gap-3">
+                  <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                    <button
+                      onClick={() => toggleSprint(sprint.id)}
+                      className="flex items-center gap-3 flex-1"
+                    >
                       <ChevronRight
                         size={20}
                         className={`text-slate-400 transition-transform ${
@@ -924,17 +1119,34 @@ function ProjectDetail() {
                         <h4 className="text-base font-semibold text-slate-900 dark:text-white">
                           {sprint.name}
                         </h4>
-                        {sprint.status === "current" && (
+                        {sprint.status === "active" && (
                           <span className="px-2 py-1 bg-primary text-white text-xs font-medium rounded-lg">
-                            Current
+                            Active
+                          </span>
+                        )}
+                        {sprint.status === "planning" && (
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg">
+                            Planning
+                          </span>
+                        )}
+                        {sprint.status === "completed" && (
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-lg">
+                            Completed
+                          </span>
+                        )}
+                        {sprint.status === "cancelled" && (
+                          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg">
+                            Cancelled
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
-                        {sprint.pointsCompleted}/{sprint.pointsTotal} points
+                        Start: {sprint.start_date}{" "}
+                        End: {sprint.end_date} •{" "}
+                        Goals: {sprint.goal}
                       </p>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-3 w-48">
                         <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
@@ -947,8 +1159,117 @@ function ProjectDetail() {
                           {sprint.progress}%
                         </span>
                       </div>
+
+                      {/* Sprint Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        {sprint.status === "planning" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartSprint(sprint.id);
+                            }}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+                          >
+                            <Play size={14} />
+                            Start Sprint
+                          </button>
+                        )}
+
+                        {sprint.status === "active" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCompleteSprint(sprint.id);
+                            }}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+                          >
+                            <CheckCircle size={14} />
+                            Complete Sprint
+                          </button>
+                        )}
+
+                        {sprint.status === "completed" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewSprintReport(sprint);
+                            }}
+                            className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+                          >
+                            <BarChart size={14} />
+                            View Report
+                          </button>
+                        )}
+
+                        {/* More Actions Menu */}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenSprintMenu(sprint.id === openSprintMenu ? null : sprint.id);
+                            }}
+                            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition"
+                          >
+                            <MoreVertical size={18} className="text-slate-600 dark:text-slate-400" />
+                          </button>
+
+                          {openSprintMenu === sprint.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setOpenSprintMenu(null)}
+                              />
+                              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[180px]">
+                                {sprint.status !== "completed" && (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditSprint(sprint);
+                                        setOpenSprintMenu(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                    >
+                                      <Edit2 size={14} />
+                                      Edit Sprint
+                                    </button>
+                                  </>
+                                )}
+
+                                {sprint.status === "completed" && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewSprintReport(sprint);
+                                      setOpenSprintMenu(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                  >
+                                    <BarChart size={14} />
+                                    View Report
+                                  </button>
+                                )}
+
+                                {sprint.status !== "active" && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteSprint(sprint);
+                                      setOpenSprintMenu(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition rounded-b-lg border-t border-slate-200 dark:border-slate-700"
+                                  >
+                                    <Trash2 size={14} />
+                                    Delete Sprint
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                  </div>
 
                   {/* Sprint Issues */}
                   {expandedSprints[sprint.id] && sprint.issues.length > 0 && (
