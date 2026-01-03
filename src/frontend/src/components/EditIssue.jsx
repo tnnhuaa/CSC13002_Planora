@@ -131,6 +131,12 @@ const EditIssue = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validate task has assignee
+    if (formData.type === "task" && !formData.assignee) {
+      alert("Tasks must be assigned to a member");
+      return;
+    }
+
     // Merge updates with original ID
     const updatedIssue = {
       ...issueData,
@@ -210,15 +216,21 @@ const EditIssue = ({
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Assignee
+            {formData.type === "task" && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
           </label>
           <select
             name="assignee"
             value={formData.assignee}
             onChange={handleChange}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+            disabled={formData.type === "bug"}
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">Unassigned</option>
-            {members.map((member) => {
+            <option value="">
+              {formData.type === "bug" ? "Not Required" : "Select Assignee..."}
+            </option>
+            {formData.type === "task" && members.map((member) => {
               // Handle different member object structures (populated vs ID)
               const userId = member.user?._id || member.user || member._id;
               const username =
@@ -231,6 +243,11 @@ const EditIssue = ({
               );
             })}
           </select>
+          {formData.type === "bug" && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Bugs don't require assignment
+            </p>
+          )}
         </div>
 
         {/* Priority, Type, Status Row */}
@@ -261,7 +278,15 @@ const EditIssue = ({
             <select
               name="type"
               value={formData.type}
-              onChange={handleChange}
+              onChange={(e) => {
+                const newType = e.target.value;
+                setFormData(prev => ({
+                  ...prev,
+                  type: newType,
+                  // Clear assignee when switching to Bug
+                  assignee: newType === "bug" ? "" : prev.assignee
+                }));
+              }}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
               {TYPE_OPTIONS.map((opt) => (
