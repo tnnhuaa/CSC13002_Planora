@@ -134,6 +134,10 @@ class IssueService {
         console.error("Failed to link new issue to sprint:", error);
       }
     }
+    projectExists.issueCount = (projectExists.issueCount || 0) + 1;
+    await projectRepository.updateProject(projectExists._id, {
+      issueCount: projectExists.issueCount,
+    });
 
     return createdIssue;
   }
