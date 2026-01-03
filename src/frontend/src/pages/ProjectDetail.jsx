@@ -1586,6 +1586,13 @@ function ProjectDetail() {
                               {issue.key ||
                                 issue._id.substring(issue._id.length - 6)}
                             </span>
+                            <button
+                              onClick={(e) => handleDeleteIssue(issue, e)}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded transition text-slate-400 hover:text-red-500"
+                              title="Delete issue"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
 
                           <h5 className="text-base font-bold text-white mb-3 line-clamp-2">

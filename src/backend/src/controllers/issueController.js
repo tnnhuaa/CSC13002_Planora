@@ -28,8 +28,39 @@ class IssueController {
       //     .json({ message: "Only project managers can create issues" });
       // }
 
+      const { type, assignee, sprint, ...otherData } = req.body;
+
+      // Validate type
+      if (type && !["task", "bug"].includes(type)) {
+        return res.status(400).json({
+          message: 'Invalid issue type. Must be either "task" or "bug"',
+        });
+      }
+
+      // Validate assignee for tasks
+      const issueType = type || "task";
+
+      if (issueType === "task" && !assignee) {
+        return res.status(400).json({
+          message: "Tasks must be assigned to a member",
+        });
+      }
+
+      // Determine initial status based on type and sprint
+      // Only tasks with sprint go to todo, everything else goes to backlog
+      let status;
+      if (issueType === "task" && sprint) {
+        status = "todo";
+      } else {
+        status = "backlog";
+      }
+
       const issueData = {
-        ...req.body,
+        ...otherData,
+        type: issueType,
+        assignee: issueType === "task" ? assignee : null,
+        sprint: sprint || null,
+        status,
         project: projectId,
         reporter: reporterId,
       };
@@ -185,6 +216,32 @@ class IssueController {
       const { id } = req.params;
       const updateData = req.body;
       const currentUser = req.user;
+
+      // Get current issue to check type
+      const currentIssue = await issueService.getIssueById(id);
+
+      // Determine the type (use update if provided, otherwise current)
+      const issueType = updateData.type || currentIssue.type;
+
+      // Handle assignee update
+      if (updateData.assignee !== undefined) {
+        // If changing to task or already a task, ensure assignee exists
+        if (issueType === "task" && !updateData.assignee) {
+          return res.status(400).json({
+            message: "Tasks must be assigned to a member",
+          });
+        }
+
+        // If removing assignee from a task, move to backlog
+        if (currentIssue.type === "task" && !updateData.assignee) {
+          updateData.status = "backlog";
+        }
+
+        // Bugs don't need assignee
+        if (issueType === "bug") {
+          updateData.assignee = null;
+        }
+      }
 
       const updatedIssue = await issueService.updateIssue(
         id,
