@@ -37,6 +37,7 @@ import EditIssue from "../components/EditIssue";
 import DeleteIssueConfirmation from "../components/DeleteIssueConfirmation";
 import CreateSprint from "../components/CreateSprint";
 import { showToast } from "../utils/toastUtils";
+import { sprintService } from "../services/sprintService";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -65,7 +66,7 @@ function ProjectDetail() {
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
   const [openSprintMenu, setOpenSprintMenu] = useState(null);
   const [sprintsData, setSprintsData] = useState([]);
-
+  const [createIssueStatus, setCreateIssueStatus] = useState("todo");
   const {
     searchTerm,
     filters,
@@ -112,10 +113,22 @@ function ProjectDetail() {
       console.error("Failed to fetch project details:", error);
     }
   };
+
+  const fetchSprints = async () => {
+    try {
+      const response = await sprintService.getSprintsByProject(projectId);
+      setSprintsData(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch sprints:", error);
+      // Optional: showToast.error("Failed to load sprints");
+    }
+  };
+
   useEffect(() => {
     const initFetch = async () => {
       setLoading(true);
       await fetchProjectDetails();
+      await fetchSprints();
       setLoading(false);
     };
 
@@ -352,6 +365,11 @@ function ProjectDetail() {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
 
+  const handleOpenCreateModal = (status) => {
+    setCreateIssueStatus(status);
+    setIsIssueModalOpen(true);
+  };
+
   const getPriorityColor = (priority) => {
     const colors = {
       high: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
@@ -398,202 +416,6 @@ function ProjectDetail() {
     return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600";
   };
 
-  // Mock data for sprints - aligned with backend Sprint schema
-  const mockSprintsData = [
-    {
-      id: "sprint-4",
-      name: "Sprint 4",
-      goal: "Implement core features for user engagement",
-      status: "planning", // Backend enum: planning, active, completed, cancelled
-      start_date: "2025-01-13",
-      end_date: "2025-01-27",
-      tasksCompleted: 0,
-      tasksTotal: 5,
-      pointsCompleted: 0,
-      pointsTotal: 28,
-      progress: 0,
-      issues: [
-        {
-          id: "PLAN-011",
-          title: "Implement notification system",
-          priority: "high",
-          type: "Feature",
-          assignee: "MK",
-          dueDate: "2025-01-15",
-          status: "Jan 15",
-        },
-        {
-          id: "PLAN-012",
-          title: "Add export functionality",
-          priority: "medium",
-          type: "Feature",
-          assignee: "LT",
-          dueDate: "2025-01-18",
-          status: "Jan 18",
-        },
-        {
-          id: "PLAN-013",
-          title: "Optimize database queries",
-          priority: "high",
-          type: "Enhancement",
-          assignee: "AJ",
-          dueDate: "2025-01-16",
-          status: "Jan 16",
-        },
-        {
-          id: "PLAN-014",
-          title: "Add user permissions",
-          priority: "medium",
-          type: "Feature",
-          assignee: "CW",
-          dueDate: "2025-01-20",
-          status: "Jan 20",
-        },
-        {
-          id: "PLAN-015",
-          title: "Fix mobile responsiveness",
-          priority: "high",
-          type: "Bug",
-          assignee: "BS",
-          dueDate: "2025-01-14",
-          status: "Jan 14",
-        },
-      ],
-    },
-    {
-      id: "sprint-3",
-      name: "Sprint 3",
-      goal: "Complete authentication and UI improvements",
-      status: "active", // Backend enum: planning, active, completed, cancelled
-      start_date: "2024-12-30",
-      end_date: "2025-01-13",
-      tasksCompleted: 0,
-      tasksTotal: 4,
-      pointsCompleted: 0,
-      pointsTotal: 21,
-      progress: 0,
-      issues: [
-        {
-          id: "PLAN-001",
-          title: "Design new login page",
-          priority: "high",
-          type: "Feature",
-          assignee: "AJ",
-          dueDate: "2025-01-03",
-          status: "Due Soon",
-        },
-        {
-          id: "PLAN-002",
-          title: "API integration for user data",
-          priority: "medium",
-          type: "Feature",
-          assignee: "CW",
-          dueDate: "2025-01-07",
-          status: "Jan 7",
-        },
-        {
-          id: "PLAN-003",
-          title: "Fix navigation menu bug",
-          priority: "high",
-          type: "Bug",
-          assignee: "AJ",
-          dueDate: "2025-01-03",
-          status: "Due Soon",
-        },
-        {
-          id: "PLAN-004",
-          title: "Implement dark mode",
-          priority: "medium",
-          type: "Feature",
-          assignee: "BS",
-          dueDate: "2025-01-10",
-          status: "Jan 10",
-        },
-      ],
-    },
-    {
-      id: "sprint-2",
-      name: "Sprint 2",
-      goal: "Setup infrastructure and core features",
-      status: "completed", // Backend enum: planning, active, completed, cancelled
-      start_date: "2024-12-16",
-      end_date: "2024-12-30",
-      tasksCompleted: 3,
-      tasksTotal: 3,
-      pointsCompleted: 18,
-      pointsTotal: 18,
-      progress: 100,
-      issues: [
-        {
-          id: "PLAN-007",
-          title: "Setup CI/CD pipeline",
-          priority: "high",
-          type: "Feature",
-          assignee: "AJ",
-          dueDate: "2024-12-28",
-          status: "Completed",
-        },
-        {
-          id: "PLAN-008",
-          title: "Implement authentication",
-          priority: "high",
-          type: "Feature",
-          assignee: "CW",
-          dueDate: "2024-12-30",
-          status: "Completed",
-        },
-        {
-          id: "PLAN-009",
-          title: "Create project dashboard",
-          priority: "medium",
-          type: "Feature",
-          assignee: "BS",
-          dueDate: "2024-12-29",
-          status: "Completed",
-        },
-      ],
-    },
-    {
-      id: "sprint-1",
-      name: "Sprint 1",
-      goal: "Project foundation and architecture",
-      status: "completed", // Backend enum: planning, active, completed, cancelled
-      start_date: "2024-12-02",
-      end_date: "2024-12-16",
-      tasksCompleted: 2,
-      tasksTotal: 2,
-      pointsCompleted: 13,
-      pointsTotal: 13,
-      progress: 100,
-      issues: [
-        {
-          id: "PLAN-005",
-          title: "Project initialization",
-          priority: "high",
-          type: "Feature",
-          assignee: "AJ",
-          dueDate: "2024-12-15",
-          status: "Completed",
-        },
-        {
-          id: "PLAN-006",
-          title: "Database schema design",
-          priority: "high",
-          type: "Feature",
-          assignee: "MK",
-          dueDate: "2024-12-18",
-          status: "Completed",
-        },
-      ],
-    },
-  ];
-
-  // Initialize sprints data
-  useEffect(() => {
-    setSprintsData(mockSprintsData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const toggleSprint = (sprintId) => {
     setExpandedSprints((prev) => ({
       ...prev,
@@ -603,46 +425,26 @@ function ProjectDetail() {
 
   // Get issues that are not assigned to any sprint
   const getUnassignedIssues = () => {
-    const assignedIssueIds = new Set();
-    
-    // Collect all issue IDs that are assigned to sprints
-    sprintsData.forEach(sprint => {
-      if (sprint.issues && Array.isArray(sprint.issues)) {
-        sprint.issues.forEach(issue => {
-          assignedIssueIds.add(issue._id || issue.id);
-        });
-      }
-    });
-    
-    mockSprintsData.forEach(sprint => {
-      if (sprint.issues && Array.isArray(sprint.issues)) {
-        sprint.issues.forEach(issue => {
-          assignedIssueIds.add(issue._id || issue.id);
-        });
-      }
-    });
-    
-    // Return issues not in any sprint
-    return issues.filter(issue => !assignedIssueIds.has(issue._id));
+    return issues.filter((issue) => issue.status === "backlog");
   };
 
   const handleStartSprint = (sprintId) => {
     setSprintsData((prevSprints) =>
       prevSprints.map((sprint) => {
-        if (sprint.id === sprintId) {
+        if (sprint._id === sprintId) {
           // Update status from 'planning' to 'active' and set start_date to today
-          return { 
-            ...sprint, 
+          return {
+            ...sprint,
             status: "active",
-            start_date: new Date().toISOString().split('T')[0] // Update start date to today
+            start_date: new Date().toISOString().split("T")[0], // Update start date to today
           };
         }
         // Set any other active sprint to completed
         if (sprint.status === "active") {
-          return { 
-            ...sprint, 
+          return {
+            ...sprint,
             status: "completed",
-            end_date: new Date().toISOString().split('T')[0] // Update end date to today
+            end_date: new Date().toISOString().split("T")[0], // Update end date to today
           };
         }
         return sprint;
@@ -656,12 +458,12 @@ function ProjectDetail() {
   const handleCompleteSprint = (sprintId) => {
     setSprintsData((prevSprints) =>
       prevSprints.map((sprint) =>
-        sprint.id === sprintId
-          ? { 
-              ...sprint, 
-              status: "completed", 
+        sprint._id === sprintId
+          ? {
+              ...sprint,
+              status: "completed",
               progress: 100,
-              end_date: new Date().toISOString().split('T')[0] // Update end date to today
+              end_date: new Date().toISOString().split("T")[0], // Update end date to today
             }
           : sprint
       )
@@ -680,10 +482,10 @@ function ProjectDetail() {
   const handleDeleteSprint = (sprint) => {
     if (window.confirm(`Are you sure you want to delete ${sprint.name}?`)) {
       setSprintsData((prevSprints) =>
-        prevSprints.filter((s) => s.id !== sprint.id)
+        prevSprints.filter((s) => s.id !== sprint._id)
       );
       showToast("success", "Sprint deleted successfully!");
-      console.log("Delete sprint:", sprint.id);
+      console.log("Delete sprint:", sprint._id);
       // TODO: Add API call to delete sprint
     }
   };
@@ -1047,7 +849,7 @@ function ProjectDetail() {
                                   </button>
                                 </div>
                               </div>
-                              
+
                               <div className="flex flex-wrap gap-2 mb-3">
                                 <span
                                   className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
@@ -1126,19 +928,19 @@ function ProjectDetail() {
             <div className="space-y-3">
               {sprintsData.map((sprint) => (
                 <div
-                  key={sprint.id}
+                  key={sprint._id}
                   className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
                 >
                   {/* Sprint Header */}
                   <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                     <button
-                      onClick={() => toggleSprint(sprint.id)}
+                      onClick={() => toggleSprint(sprint._id)}
                       className="flex items-center gap-3 flex-1"
                     >
                       <ChevronRight
                         size={20}
                         className={`text-slate-400 transition-transform ${
-                          expandedSprints[sprint.id] ? "rotate-90" : ""
+                          expandedSprints[sprint._id] ? "rotate-90" : ""
                         }`}
                       />
                       <div className="flex items-center gap-2">
@@ -1168,8 +970,7 @@ function ProjectDetail() {
                       </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
-                        Start: {sprint.start_date}{" "}
-                        End: {sprint.end_date} •{" "}
+                        Start: {sprint.start_date} End: {sprint.end_date} •{" "}
                         Goals: {sprint.goal}
                       </p>
                     </button>
@@ -1192,7 +993,7 @@ function ProjectDetail() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleStartSprint(sprint.id);
+                              handleStartSprint(sprint._id);
                             }}
                             className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
                           >
@@ -1205,7 +1006,7 @@ function ProjectDetail() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleCompleteSprint(sprint.id);
+                              handleCompleteSprint(sprint._id);
                             }}
                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
                           >
@@ -1232,14 +1033,21 @@ function ProjectDetail() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenSprintMenu(sprint.id === openSprintMenu ? null : sprint.id);
+                              setOpenSprintMenu(
+                                sprint._id === openSprintMenu
+                                  ? null
+                                  : sprint._id
+                              );
                             }}
                             className="p-2 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition"
                           >
-                            <MoreVertical size={18} className="text-slate-600 dark:text-slate-400" />
+                            <MoreVertical
+                              size={18}
+                              className="text-slate-600 dark:text-slate-400"
+                            />
                           </button>
 
-                          {openSprintMenu === sprint.id && (
+                          {openSprintMenu === sprint._id && (
                             <>
                               <div
                                 className="fixed inset-0 z-10"
@@ -1298,7 +1106,7 @@ function ProjectDetail() {
                   </div>
 
                   {/* Sprint Issues */}
-                  {expandedSprints[sprint.id] && sprint.issues.length > 0 && (
+                  {expandedSprints[sprint._id] && sprint.issues.length > 0 && (
                     <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
                         {sprint.issues.map((issue) => (
@@ -1381,116 +1189,172 @@ function ProjectDetail() {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {/* Backlog Section */}
-              {getUnassignedIssues().length > 0 && (
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
-                  {/* Backlog Header */}
-                  <button
-                    onClick={() => setIsBacklogExpanded(!isBacklogExpanded)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <ChevronRight
-                        size={20}
-                        className={`text-slate-400 transition-transform ${
-                          isBacklogExpanded ? "rotate-90" : ""
-                        }`}
-                      />
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-semibold text-slate-900 dark:text-white">
-                          Backlog
-                        </h4>
-                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg">
-                          Not in Sprint
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {getUnassignedIssues().length} {getUnassignedIssues().length === 1 ? 'issue' : 'issues'}
-                      </p>
-                    </div>
-                  </button>
+            {/* Backlog Issues Container */}
+            <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+              {/* Header */}
+              <div className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition border-b border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                {/* Left Side: Clickable Expand/Collapse Area */}
+                <div
+                  onClick={() => setIsBacklogExpanded(!isBacklogExpanded)}
+                  className="flex items-center gap-3 cursor-pointer flex-1"
+                >
+                  <ChevronRight
+                    size={20}
+                    className={`text-slate-400 transition-transform ${
+                      isBacklogExpanded ? "rotate-90" : ""
+                    }`}
+                  />
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-semibold text-slate-900 dark:text-white">
+                      Backlog
+                    </h4>
+                    <span className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg">
+                      Not in Sprint
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {getUnassignedIssues().length}{" "}
+                    {getUnassignedIssues().length === 1 ? "issue" : "issues"}
+                  </p>
+                </div>
 
-                  {/* Unassigned Issues List */}
-                  {isBacklogExpanded && (
-                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                        {getUnassignedIssues().map((issue) => (
-                          <div
-                            key={issue._id}
-                            onClick={() => handleIssueClick(issue)}
-                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition cursor-pointer"
-                          >
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                              {issue._id?.slice(-6) || 'N/A'}
-                            </p>
-                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                              {issue.title}
-                            </h5>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(issue.priority)}`}
-                              >
-                                {issue.priority?.charAt(0).toUpperCase() + issue.priority?.slice(1)}
-                              </span>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${getTypeColor(issue.type)}`}
-                              >
-                                {issue.type}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                style={{
-                                  backgroundColor: generateAvatarColor(
-                                    issue.assignee?.username || "Unassigned"
-                                  ),
-                                }}
-                              >
-                                {getAvatarInitial(issue.assignee?.username || "U")}
-                              </div>
-                              {issue.due_date && (
-                                <span
-                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${getDueDateColor(issue.due_date)}`}
-                                >
-                                  {getDueDateLabel(issue.due_date)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                {/* Right Side: HIGHLIGHTED Create Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the list from collapsing
+                    handleOpenCreateModal("backlog");
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all"
+                  title="Add issue directly to backlog"
+                >
+                  <Plus size={16} />
+                  Add Backlog Item
+                </button>
+              </div>
+
+              {/* Real Issues List */}
+              {isBacklogExpanded && (
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getUnassignedIssues().length === 0 && (
+                      <div className="col-span-full text-center py-8 text-slate-500">
+                        No issues in backlog. Create one to see it here!
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {getUnassignedIssues().map((issue) => {
+                      // Calculate days left for overdue logic
+                      const daysLeft = calculateDaysLeft(issue.due_date);
+                      const isOverdue = daysLeft !== null && daysLeft < 0;
+
+                      // Helper to safely get username
+                      const assigneeName =
+                        issue.assignee?.username || "Unassigned";
+                      const assigneeInitial = getAvatarInitial(assigneeName);
+                      const avatarColor = generateAvatarColor(assigneeName);
+
+                      return (
+                        <div
+                          key={issue._id}
+                          onClick={() => handleIssueClick(issue)}
+                          className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer group"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-mono text-slate-400">
+                              {issue.key ||
+                                issue._id.substring(issue._id.length - 6)}
+                            </span>
+                          </div>
+
+                          <h5 className="text-base font-bold text-white mb-3 line-clamp-2">
+                            {issue.title}
+                          </h5>
+
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {/* Priority Badge */}
+                            <span
+                              className={`px-2 py-0.5 text-xs font-bold rounded border ${
+                                issue.priority === "high"
+                                  ? "bg-red-900/30 text-red-500 border-red-900"
+                                  : issue.priority === "low"
+                                  ? "bg-blue-900/30 text-blue-500 border-blue-900"
+                                  : "bg-yellow-900/30 text-yellow-500 border-yellow-900"
+                              }`}
+                            >
+                              {issue.priority
+                                ? issue.priority.toUpperCase()
+                                : "MEDIUM"}
+                            </span>
+
+                            {/* Type Badge */}
+                            <span
+                              className={`px-2 py-0.5 text-xs font-bold rounded border ${
+                                issue.type === "bug"
+                                  ? "bg-red-900/30 text-red-400 border-red-900"
+                                  : "bg-blue-900/30 text-blue-400 border-blue-900"
+                              }`}
+                            >
+                              {issue.type || "task"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-auto pt-2">
+                            {/* Assignee Avatar */}
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                              style={{ backgroundColor: avatarColor }}
+                            >
+                              {assigneeInitial}
+                            </div>
+
+                            {/* Overdue Badge */}
+                            {isOverdue ? (
+                              <span className="px-2 py-1 text-[10px] font-bold text-white bg-red-600/80 border border-red-500 rounded-md">
+                                {Math.abs(daysLeft)} days overdue
+                              </span>
+                            ) : issue.due_date ? (
+                              <span className="text-xs text-slate-500">
+                                {new Date(issue.due_date).toLocaleDateString()}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               {/* Sprints Section */}
-              {mockSprintsData.map((sprint) => (
+              {sprintsData.map((sprint) => (
                 <div
-                  key={sprint.id}
+                  key={sprint._id}
                   className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
                 >
                   {/* Sprint Header */}
                   <button
-                    onClick={() => toggleSprint(sprint.id)}
+                    onClick={() => toggleSprint(sprint._id)}
                     className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
                   >
                     <div className="flex items-center gap-3">
                       <ChevronRight
                         size={20}
                         className={`text-slate-400 transition-transform ${
-                          expandedSprints[sprint.id] ? "rotate-90" : ""
+                          expandedSprints[sprint._id] ? "rotate-90" : ""
                         }`}
                       />
                       <div className="flex items-center gap-2">
                         <h4 className="text-base font-semibold text-slate-900 dark:text-white">
                           {sprint.name}
                         </h4>
-                        {sprint.status === "current" && (
+                        {sprint.status === "active" && (
                           <span className="px-2 py-1 bg-primary text-white text-xs font-medium rounded-lg">
-                            Current
+                            Active
+                          </span>
+                        )}
+                        {sprint.status === "planning" && (
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg">
+                            Planning
                           </span>
                         )}
                       </div>
@@ -1515,7 +1379,7 @@ function ProjectDetail() {
                   </button>
 
                   {/* Sprint Issues */}
-                  {expandedSprints[sprint.id] && sprint.issues.length > 0 && (
+                  {expandedSprints[sprint._id] && sprint.issues.length > 0 && (
                     <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
                         {sprint.issues.map((issue) => (
@@ -1768,8 +1632,10 @@ function ProjectDetail() {
         onClose={() => setIsIssueModalOpen(false)}
         onCreateIssue={handleCreateIssueSubmit}
         projectPropId={projectId} // Quan trọng: Truyền ID để component tự hiểu
-        column="todo"
+        column={createIssueStatus}
         members={project?.members || []}
+        // sprints={sprints} (Correct form)
+        sprints={sprintsData} // mock data
       />
 
       {/* ADD MEMBER MODAL */}
@@ -1940,6 +1806,8 @@ function ProjectDetail() {
           }}
           issueData={selectedIssue}
           onUpdateIssue={handleUpdateIssueSubmit}
+          sprints={sprintsData}
+          members={project?.members || []}
         />
       )}
 

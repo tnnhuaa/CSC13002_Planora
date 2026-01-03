@@ -10,6 +10,7 @@ const CreateIssue = ({
   column,
   projectPropId,
   members = [],
+  sprints = [],
 }) => {
   const initialFormState = {
     title: "",
@@ -26,7 +27,7 @@ const CreateIssue = ({
   const [formData, setFormData] = useState(initialFormState);
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
-
+  const [selectedSprint, setSelectedSprint] = useState("");
   // "YYYY-MM-DD"
   const getToday = () => {
     return new Date().toISOString().split("T")[0];
@@ -34,6 +35,8 @@ const CreateIssue = ({
 
   const mapColumnToStatus = (colName) => {
     if (!colName) return "todo";
+    if (colName === "backlog") return "backlog";
+    if (colName === "todo") return "todo";
     const mapping = {
       "To Do": "todo",
       "In Progress": "in_progress",
@@ -42,7 +45,7 @@ const CreateIssue = ({
     };
     return mapping[colName] || "todo";
   };
-
+  const isBacklogMode = column === "backlog";
   useEffect(() => {
     if (isOpen) {
       setError("");
@@ -53,6 +56,7 @@ const CreateIssue = ({
         // Nếu có props column truyền vào (ví dụ bấm nút + ở cột Done), map nó sang status
         status: mapColumnToStatus(column),
       }));
+      setSelectedSprint("");
 
       if (!projectPropId) {
         const fetchProjects = async () => {
@@ -86,6 +90,7 @@ const CreateIssue = ({
       ...formData,
       priority: formData.priority.toLowerCase(),
       type: formData.type.toLowerCase(),
+      sprint: selectedSprint || null,
     };
 
     if (formData.start_date && formData.due_date) {
@@ -124,7 +129,9 @@ const CreateIssue = ({
               Create Issue
             </h2>
             <p className="text-sm text-slate-500">
-              Add a new task to {column || "To Do"}
+              {isBacklogMode
+                ? "Add a new issue to backlog"
+                : "Create a new issue and assign to sprint"}
             </p>
           </div>
           <button
@@ -195,6 +202,29 @@ const CreateIssue = ({
               }
             />
           </div>
+
+          {/* Sprint Selection */}
+          {!isBacklogMode && sprints.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                Sprint
+              </label>
+              <select
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedSprint}
+                onChange={(e) => setSelectedSprint(e.target.value)}
+              >
+                <option value="">Select a Sprint</option>
+                {sprints
+                  .filter((s) => s.status !== "completed") // Don't allow adding to completed sprints
+                  .map((sprint) => (
+                    <option key={sprint._id} value={sprint._id}>
+                      {sprint.name} ({sprint.status})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
 
           {/* Assignee */}
           <div>
