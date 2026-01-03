@@ -64,9 +64,15 @@ function ProjectDetail() {
   const [expandedSprints, setExpandedSprints] = useState({ "sprint-3": true }); // Track which sprints are expanded
   const [isBacklogExpanded, setIsBacklogExpanded] = useState(true); // Track if unassigned backlog is expanded
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
+  const [isEditSprintModalOpen, setIsEditSprintModalOpen] = useState(false);
+  const [editingSprint, setEditingSprint] = useState(null);
   const [openSprintMenu, setOpenSprintMenu] = useState(null);
+  const [openMemberMenu, setOpenMemberMenu] = useState(null);
   const [sprintsData, setSprintsData] = useState([]);
   const [createIssueStatus, setCreateIssueStatus] = useState("todo");
+  const [sprintStatsModal, setSprintStatsModal] = useState({ isOpen: false, sprintId: null, stats: null, loading: false });
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [dragOverSprint, setDragOverSprint] = useState(null);
   const {
     searchTerm,
     filters,
@@ -221,7 +227,16 @@ function ProjectDetail() {
     }
   };
 
+  // Format date helper function
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    return date.toLocaleDateString('vi-VN', options);
+  };
+
+  // Format relative time for comments
+  const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -233,7 +248,7 @@ function ProjectDetail() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   };
 
   // Add member handlers
@@ -297,10 +312,10 @@ function ProjectDetail() {
         await projectService.addMemberToProject(projectId, member);
       }
 
-      // Fetch lại data
+      // Fetch updated project details
       await fetchProjectDetails();
 
-      // Close modal và reset
+      // Close modal & reset
       setIsAddMemberModalOpen(false);
       setSelectedMembers([]);
       setSearchQuery("");
@@ -316,6 +331,33 @@ function ProjectDetail() {
     setSearchQuery("");
   };
 
+  const handleChangeMemberRole = async (memberId, newRole) => {
+    try {
+      await projectService.changeMemberRole(projectId, memberId, newRole);
+      await fetchProjectDetails();
+      setOpenMemberMenu(null);
+      showToast.success("Member role updated successfully");
+    } catch (error) {
+      console.error("Failed to change member role:", error);
+      showToast.error("Failed to change member role");
+    }
+  };
+
+  const handleRemoveMember = async (memberId, memberName) => {
+    if (!window.confirm(`Are you sure you want to remove ${memberName} from this project?`)) {
+      return;
+    }
+    try {
+      await projectService.removeMemberFromProject(projectId, memberId);
+      await fetchProjectDetails();
+      setOpenMemberMenu(null);
+      showToast.success("Member removed successfully");
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      showToast.error("Failed to remove member");
+    }
+  };
+
   const handleEditIssue = (issue, e) => {
     e.stopPropagation(); // Prevent clicking the card behind it
     setSelectedIssue(issue);
@@ -329,16 +371,13 @@ function ProjectDetail() {
         updatedIssueData
       );
 
-      setIssues((prevIssues) =>
-        prevIssues.map((issue) =>
-          issue._id === updatedIssueData._id
-            ? { ...issue, ...updatedIssueData }
-            : issue
-        )
-      );
+      // Fetch latest data from backend
+      await fetchProjectDetails();
+      await fetchSprints();
 
       setIsEditIssueModalOpen(false);
       setSelectedIssue(null);
+
       showToast.success("Issue updated successfully");
     } catch (error) {
       console.error("Failed to update issue:", error);
@@ -359,6 +398,10 @@ function ProjectDetail() {
 
     setIsDeleteIssueModalOpen(false);
     setSelectedIssue(null);
+
+    // Fetch data
+    fetchProjectDetails();
+    fetchSprints();
   };
 
   const getIssuesByStatus = (status) => {
@@ -428,84 +471,255 @@ function ProjectDetail() {
     return issues.filter((issue) => issue.status === "backlog");
   };
 
-  const handleStartSprint = (sprintId) => {
-    setSprintsData((prevSprints) =>
-      prevSprints.map((sprint) => {
-        if (sprint._id === sprintId) {
-          // Update status from 'planning' to 'active' and set start_date to today
-          return {
-            ...sprint,
-            status: "active",
-            start_date: new Date().toISOString().split("T")[0], // Update start date to today
-          };
-        }
-        // Set any other active sprint to completed
-        if (sprint.status === "active") {
-          return {
-            ...sprint,
-            status: "completed",
-            end_date: new Date().toISOString().split("T")[0], // Update end date to today
-          };
-        }
-        return sprint;
-      })
-    );
-    showToast("success", "Sprint started successfully!");
-    console.log(`Starting sprint: ${sprintId}`);
-    // TODO: Add API call here - POST /api/sprints/:id/start
-  };
-
-  const handleCompleteSprint = (sprintId) => {
-    setSprintsData((prevSprints) =>
-      prevSprints.map((sprint) =>
-        sprint._id === sprintId
-          ? {
-              ...sprint,
-              status: "completed",
-              progress: 100,
-              end_date: new Date().toISOString().split("T")[0], // Update end date to today
-            }
-          : sprint
-      )
-    );
-    showToast("success", "Sprint completed successfully!");
-    console.log(`Completing sprint: ${sprintId}`);
-    // TODO: Add API call here - POST /api/sprints/:id/complete
-  };
-
-  const handleEditSprint = (sprint) => {
-    console.log("Edit sprint:", sprint);
-    showToast("info", "Edit sprint feature coming soon!");
-    // TODO: Implement edit sprint modal
-  };
-
-  const handleDeleteSprint = (sprint) => {
-    if (window.confirm(`Are you sure you want to delete ${sprint.name}?`)) {
-      setSprintsData((prevSprints) =>
-        prevSprints.filter((s) => s.id !== sprint._id)
-      );
-      showToast("success", "Sprint deleted successfully!");
-      console.log("Delete sprint:", sprint._id);
-      // TODO: Add API call to delete sprint
+  const handleStartSprint = async (sprintId) => {
+    try {
+      const response = await sprintService.startSprint(sprintId);
+      console.log("Start sprint response:", response.data);
+      console.log("Sprint status after start:", response.data.status);
+      
+      // Update local state with the updated sprint from backend
+      setSprintsData((prevSprints) => {
+        const updated = prevSprints.map((sprint) => {
+          if (sprint._id === sprintId) {
+            console.log("Updating sprint in state:", response.data);
+            return response.data;
+          }
+          return sprint;
+        });
+        console.log("Updated sprints data:", updated);
+        return updated;
+      });
+      showToast.success("Sprint started successfully!");
+    } catch (error) {
+      console.error("Failed to start sprint:", error);
+      const errorMessage = error.response?.data?.message || "Failed to start sprint";
+      showToast.error(errorMessage);
     }
   };
 
-  const handleViewSprintReport = (sprint) => {
-    console.log("View report for sprint:", sprint);
-    showToast("info", "Sprint report view coming soon!");
-    // TODO: Implement sprint report view
+  const handleCompleteSprint = async (sprintId) => {
+    try {
+      const response = await sprintService.completeSprint(sprintId);
+      
+      // Update local state with the updated sprint from backend
+      setSprintsData((prevSprints) =>
+        prevSprints.map((sprint) =>
+          sprint._id === sprintId ? response.data : sprint
+        )
+      );
+      showToast.success("Sprint completed successfully!");
+    } catch (error) {
+      console.error("Failed to complete sprint:", error);
+      const errorMessage = error.response?.data?.message || "Failed to complete sprint";
+      showToast.error(errorMessage);
+    }
+  };
+
+  const handleEditSprint = (sprint) => {
+    setEditingSprint(sprint);
+    setIsEditSprintModalOpen(true);
+  };
+
+  const handleDeleteSprint = async (sprint) => {
+    // Check if sprint is active
+    if (sprint.status === "active") {
+      showToast.error("Cannot delete an active sprint. Please complete or cancel it first.");
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete ${sprint.name}?`)) {
+      try {
+        await sprintService.deleteSprint(sprint._id);
+        
+        // Update local state after successful deletion
+        setSprintsData((prevSprints) =>
+          prevSprints.filter((s) => s._id !== sprint._id)
+        );
+        showToast.success("Sprint deleted successfully!");
+      } catch (error) {
+        console.error("Failed to delete sprint:", error);
+        const errorMessage = error.response?.data?.message || "Failed to delete sprint";
+        showToast.error(errorMessage);
+      }
+    }
+  };
+
+  // Fetch sprint stats
+  const handleViewSprintStats = async (sprintId) => {
+    setSprintStatsModal({ isOpen: true, sprintId, stats: null, loading: true });
+    try {
+      const response = await sprintService.getSprintStats(sprintId);
+      setSprintStatsModal({ isOpen: true, sprintId, stats: response.data, loading: false });
+    } catch (error) {
+      console.error("Failed to fetch sprint stats:", error);
+      showToast.error("Failed to load sprint statistics");
+      setSprintStatsModal({ isOpen: false, sprintId: null, stats: null, loading: false });
+    }
+  };
+
+  const handleCloseStatsModal = () => {
+    setSprintStatsModal({ isOpen: false, sprintId: null, stats: null, loading: false });
   };
 
   const handleCreateSprintSubmit = async (formData) => {
     try {
-      // TODO: Implement API call to create sprint
-      console.log("Creating sprint:", formData);
-      alert("Sprint created successfully!");
-      // After successful creation, you would refresh the sprints data
+      const sprintData = {
+        name: formData.name,
+        goal: formData.goals || "",
+        projectId: projectId,
+        start_date: formData.startDate,
+        end_date: formData.dueDate,
+      };
+
+      await sprintService.createSprint(sprintData);
+      
+      // Fetch sprints
+      await fetchSprints();
+      
       setIsCreateSprintModalOpen(false);
+      showToast.success("Sprint created successfully!");
     } catch (error) {
       console.error("Failed to create sprint:", error);
-      alert("Failed to create sprint");
+      showToast.error("Failed to create sprint");
+    }
+  };
+
+  const handleUpdateSprintSubmit = async (formData) => {
+    try {
+      const sprintData = {
+        name: formData.name,
+        goal: formData.goals || "",
+        start_date: formData.startDate,
+        end_date: formData.dueDate,
+      };
+
+      await sprintService.updateSprint(editingSprint._id, sprintData);
+      
+      // Refresh sprints data
+      await fetchSprints();
+      
+      setIsEditSprintModalOpen(false);
+      setEditingSprint(null);
+      showToast.success("Sprint updated successfully!");
+    } catch (error) {
+      console.error("Failed to update sprint:", error);
+      showToast.error("Failed to update sprint");
+    }
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (e, issue, fromSprintId = null) => {
+    setDraggedIssue({ issue, fromSprintId });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIssue(null);
+    setDragOverSprint(null);
+  };
+
+  const handleDragOver = (e, targetSprintId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverSprint(targetSprintId === null ? 'backlog' : targetSprintId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSprint(null);
+  };
+
+  const handleDrop = async (e, targetSprintId = null) => {
+    e.preventDefault();
+    
+    if (!draggedIssue) return;
+
+    const { issue, fromSprintId } = draggedIssue;
+
+    // Do nothing if dropped in the same sprint/backlog
+    if (fromSprintId === targetSprintId) {
+      setDraggedIssue(null);
+      setDragOverSprint(null);
+      return;
+    }
+
+    // Backup state to revert if API fails
+    const backupSprintsData = [...sprintsData];
+    const backupIssues = [...issues];
+
+    try {
+      // OPTIMISTIC UPDATE: Update UI immediately
+      if (fromSprintId && targetSprintId) {
+        // [CASE 1] Sprint A -> Sprint B
+        setSprintsData((prev) =>
+          prev.map((sprint) => {
+            if (sprint._id === fromSprintId) {
+              return {
+                ...sprint,
+                issues: sprint.issues.filter((i) => i.id !== issue.id),
+              };
+            }
+            if (sprint._id === targetSprintId) {
+              return {
+                ...sprint,
+                issues: [...sprint.issues, issue],
+              };
+            }
+            return sprint;
+          })
+        );
+      } else if (fromSprintId && !targetSprintId) {
+        // [CASE 2] Sprint -> Backlog
+        setSprintsData((prev) =>
+          prev.map((sprint) =>
+            sprint._id === fromSprintId
+              ? {
+                  ...sprint,
+                  issues: sprint.issues.filter((i) => i.id !== issue.id),
+                }
+              : sprint
+          )
+        );
+        setIssues((prev) => [...prev, { ...issue, status: "backlog" }]);
+      } else if (!fromSprintId && targetSprintId) {
+        // [CASE 3] Backlog -> Sprint
+        setIssues((prev) => prev.filter((i) => i._id !== issue._id));
+        setSprintsData((prev) =>
+          prev.map((sprint) =>
+            sprint._id === targetSprintId
+              ? {
+                  ...sprint,
+                  issues: [...sprint.issues, issue],
+                }
+              : sprint
+          )
+        );
+      }
+
+      // Call API in the background
+      if (fromSprintId && targetSprintId && fromSprintId !== targetSprintId) {
+        await sprintService.addIssueToSprint(targetSprintId, issue._id);
+        showToast.success("Issue moved to sprint successfully!");
+      } else if (fromSprintId && !targetSprintId) {
+        await sprintService.removeIssueFromSprint(fromSprintId, issue._id);
+        showToast.success("Issue moved to backlog successfully!");
+      } else if (!fromSprintId && targetSprintId) {
+        await sprintService.addIssueToSprint(targetSprintId, issue._id);
+        showToast.success("Issue added to sprint successfully!");
+      }
+
+      // Refresh data
+      await fetchProjectDetails();
+      await fetchSprints();
+    } catch (error) {
+      console.error("Failed to move issue:", error);
+      showToast.error("Failed to move issue");
+      
+      // REVERT STATE
+      setSprintsData(backupSprintsData);
+      setIssues(backupIssues);
+    } finally {
+      setDraggedIssue(null);
+      setDragOverSprint(null);
     }
   };
 
@@ -624,7 +838,7 @@ function ProjectDetail() {
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
                   {project.createdAt
-                    ? new Date(project.createdAt).toLocaleDateString()
+                    ? formatDate(project.createdAt)
                     : "01/01/2025"}
                 </p>
               </div>
@@ -690,10 +904,11 @@ function ProjectDetail() {
             <div className="space-y-3">
               {teamMembers.map((member) => {
                 const avatarColor = generateAvatarColor(member.user?.username);
+                const isManager = member.role === "manager";
                 return (
                   <div
-                    key={member.user?.username}
-                    className="flex items-center gap-3"
+                    key={member.user?._id}
+                    className="flex items-center gap-3 group"
                   >
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -703,16 +918,82 @@ function ProjectDetail() {
                     >
                       {getAvatarInitial(member.user?.username)}
                     </div>
-                    <span className="text-sm text-slate-900 dark:text-white">
+                    <span className="text-sm text-slate-900 dark:text-white flex-1">
                       {member.user?.username}
                     </span>
                     <span
-                      className={`ml-auto px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(
+                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(
                         member.role
                       )}`}
                     >
                       {member.role || "Member"}
                     </span>
+                    
+                    {/* Member actions menu */}
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMemberMenu(
+                            openMemberMenu === member.user?._id ? null : member.user?._id
+                          );
+                        }}
+                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition"
+                      >
+                        <MoreVertical size={14} className="text-slate-600 dark:text-slate-400" />
+                      </button>
+
+                      {openMemberMenu === member.user?._id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setOpenMemberMenu(null)}
+                          />
+                          <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[160px]">
+                            {/* Change Role submenu */}
+                            <div className="px-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                              Change Role
+                            </div>
+                            {["manager", "member", "viewer"].map((role) => (
+                              <button
+                                key={role}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (role !== member.role) {
+                                    handleChangeMemberRole(member.user?._id, role);
+                                  }
+                                }}
+                                disabled={role === member.role}
+                                className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition ${
+                                  role === member.role
+                                    ? "text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                {role === member.role && (
+                                  <CheckCircle size={14} className="text-primary" />
+                                )}
+                                <span className="capitalize">{role}</span>
+                              </button>
+                            ))}
+                            
+                            {/* Remove member button */}
+                            {!isManager && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveMember(member.user?._id, member.user?.username);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition border-t border-slate-200 dark:border-slate-700"
+                              >
+                                <Trash2 size={14} />
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -929,7 +1210,7 @@ function ProjectDetail() {
               {sprintsData.map((sprint) => (
                 <div
                   key={sprint._id}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-visible"
                 >
                   {/* Sprint Header */}
                   <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
@@ -968,25 +1249,27 @@ function ProjectDetail() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
-                        Start: {sprint.start_date} End: {sprint.end_date} •{" "}
-                        Goals: {sprint.goal}
+                      <p className="text-sm text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-2">
+                        <span>
+                          {formatDate(sprint.start_date)} → {formatDate(sprint.end_date)}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            Goal:
+                          </span>{" "}
+                          {sprint.goal || <span className="italic text-slate-400">No goal set</span>}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            Issues:
+                          </span>{" "}
+                          {sprint.issues.length}
+                        </span>
                       </p>
                     </button>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-3 w-48">
-                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-primary h-full transition-all"
-                            style={{ width: `${sprint.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 w-12 text-right">
-                          {sprint.progress}%
-                        </span>
-                      </div>
-
                       {/* Sprint Action Buttons */}
                       <div className="flex items-center gap-2">
                         {sprint.status === "planning" && (
@@ -1019,7 +1302,7 @@ function ProjectDetail() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleViewSprintReport(sprint);
+                              handleViewSprintStats(sprint._id);
                             }}
                             className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
                           >
@@ -1050,10 +1333,23 @@ function ProjectDetail() {
                           {openSprintMenu === sprint._id && (
                             <>
                               <div
-                                className="fixed inset-0 z-10"
+                                className="fixed inset-0 z-40"
                                 onClick={() => setOpenSprintMenu(null)}
                               />
-                              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[180px]">
+                              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[180px]">
+                                {/* View Stats - Available for all sprints */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewSprintStats(sprint._id);
+                                    setOpenSprintMenu(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                >
+                                  <BarChart size={14} />
+                                  View Statistics
+                                </button>
+
                                 {sprint.status !== "completed" && (
                                   <>
                                     <button
@@ -1062,7 +1358,7 @@ function ProjectDetail() {
                                         handleEditSprint(sprint);
                                         setOpenSprintMenu(null);
                                       }}
-                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                                     >
                                       <Edit2 size={14} />
                                       Edit Sprint
@@ -1074,10 +1370,10 @@ function ProjectDetail() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleViewSprintReport(sprint);
+                                      handleViewSprintStats(sprint._id);
                                       setOpenSprintMenu(null);
                                     }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-t-lg"
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                                   >
                                     <BarChart size={14} />
                                     View Report
@@ -1106,65 +1402,81 @@ function ProjectDetail() {
                   </div>
 
                   {/* Sprint Issues */}
-                  {expandedSprints[sprint._id] && sprint.issues.length > 0 && (
-                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                        {sprint.issues.map((issue) => (
-                          <div
-                            key={issue.id}
-                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition"
-                          >
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                              {issue.id}
-                            </p>
-                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                              {issue.title}
-                            </h5>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.priority === "high"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                                    : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
-                                }`}
-                              >
-                                {issue.priority.charAt(0).toUpperCase() +
-                                  issue.priority.slice(1)}
-                              </span>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.type === "Bug"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                                    : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
-                                }`}
-                              >
-                                {issue.type}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                style={{
-                                  backgroundColor: generateAvatarColor(
-                                    issue.assignee
-                                  ),
-                                }}
-                              >
-                                {issue.assignee}
+                  {expandedSprints[sprint._id] && (
+                    <div 
+                      className={`p-4 pt-0 border-t border-slate-200 dark:border-slate-700 transition-colors ${
+                        dragOverSprint === sprint._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, sprint._id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, sprint._id)}
+                    >
+                      {sprint.issues.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400 mt-4">
+                          No issues in this sprint. Drag issues here to add them.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                          {sprint.issues.map((issue) => (
+                            <div
+                              key={issue.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, issue, sprint._id)}
+                              onDragEnd={handleDragEnd}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition cursor-move"
+                            >
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                                {issue.id}
+                              </p>
+                              <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                {issue.title}
+                              </h5>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.priority === "high"
+                                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
+                                  }`}
+                                >
+                                  {issue.priority.charAt(0).toUpperCase() +
+                                    issue.priority.slice(1)}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.type === "Bug"
+                                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                      : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                                  }`}
+                                >
+                                  {issue.type}
+                                </span>
                               </div>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.status === "Due Soon"
-                                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
-                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-                                }`}
-                              >
-                                {issue.status}
-                              </span>
+                              <div className="flex items-center justify-between">
+                                <div
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                  style={{
+                                    backgroundColor: generateAvatarColor(
+                                      issue.assignee?.username || issue.assignee || "Unknown"
+                                    ),
+                                  }}
+                                >
+                                  {getAvatarInitial(issue.assignee?.username || issue.assignee || "Unknown")}
+                                </div>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.status === "Due Soon"
+                                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
+                                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                  }`}
+                                >
+                                  {issue.status}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1234,7 +1546,14 @@ function ProjectDetail() {
 
               {/* Real Issues List */}
               {isBacklogExpanded && (
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+                <div 
+                  className={`p-4 border-t border-slate-200 dark:border-slate-700 transition-colors ${
+                    dragOverSprint === 'backlog' ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, null)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, null)}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {getUnassignedIssues().length === 0 && (
                       <div className="col-span-full text-center py-8 text-slate-500">
@@ -1256,8 +1575,11 @@ function ProjectDetail() {
                       return (
                         <div
                           key={issue._id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, issue, null)}
+                          onDragEnd={handleDragEnd}
                           onClick={() => handleIssueClick(issue)}
-                          className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer group"
+                          className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-move group"
                         >
                           <div className="flex justify-between items-start mb-2">
                             <span className="text-xs font-mono text-slate-400">
@@ -1314,7 +1636,7 @@ function ProjectDetail() {
                               </span>
                             ) : issue.due_date ? (
                               <span className="text-xs text-slate-500">
-                                {new Date(issue.due_date).toLocaleDateString()}
+                                {formatDate(issue.due_date)}
                               </span>
                             ) : null}
                           </div>
@@ -1329,14 +1651,14 @@ function ProjectDetail() {
               {sprintsData.map((sprint) => (
                 <div
                   key={sprint._id}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-visible mt-3"
                 >
-                  {/* Sprint Header */}
-                  <button
-                    onClick={() => toggleSprint(sprint._id)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-                  >
-                    <div className="flex items-center gap-3">
+                  {/* Sprint Header - Matching the Sprints tab exactly but without action buttons */}
+                  <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                    <button
+                      onClick={() => toggleSprint(sprint._id)}
+                      className="flex items-center gap-3 flex-1"
+                    >
                       <ChevronRight
                         size={20}
                         className={`text-slate-400 transition-transform ${
@@ -1357,87 +1679,115 @@ function ProjectDetail() {
                             Planning
                           </span>
                         )}
+                        {sprint.status === "completed" && (
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-lg">
+                            Completed
+                          </span>
+                        )}
+                        {sprint.status === "cancelled" && (
+                          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium rounded-lg">
+                            Cancelled
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {sprint.tasksCompleted}/{sprint.tasksTotal} tasks •{" "}
-                        {sprint.pointsCompleted}/{sprint.pointsTotal} points
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-3 w-48">
-                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-primary h-full transition-all"
-                            style={{ width: `${sprint.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 w-12 text-right">
-                          {sprint.progress}%
+                      <p className="text-sm text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-2">
+                        <span>
+                          {formatDate(sprint.start_date)} → {formatDate(sprint.end_date)}
                         </span>
-                      </div>
-                    </div>
-                  </button>
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            Goal:
+                          </span>{" "}
+                          {sprint.goal || <span className="italic text-slate-400">No goal set</span>}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            Issues:
+                          </span>{" "}
+                          {sprint.issues.length}
+                        </span>
+                      </p>
+                    </button>
+                  </div>
 
                   {/* Sprint Issues */}
-                  {expandedSprints[sprint._id] && sprint.issues.length > 0 && (
-                    <div className="p-4 pt-0 border-t border-slate-200 dark:border-slate-700">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                        {sprint.issues.map((issue) => (
-                          <div
-                            key={issue.id}
-                            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition"
-                          >
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                              {issue.id}
-                            </p>
-                            <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                              {issue.title}
-                            </h5>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.priority === "high"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                                    : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
-                                }`}
-                              >
-                                {issue.priority.charAt(0).toUpperCase() +
-                                  issue.priority.slice(1)}
-                              </span>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.type === "Bug"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                                    : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
-                                }`}
-                              >
-                                {issue.type}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                style={{
-                                  backgroundColor: generateAvatarColor(
-                                    issue.assignee
-                                  ),
-                                }}
-                              >
-                                {issue.assignee}
+                  {expandedSprints[sprint._id] && (
+                    <div 
+                      className={`p-4 pt-0 border-t border-slate-200 dark:border-slate-700 transition-colors ${
+                        dragOverSprint === sprint._id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
+                      onDragOver={(e) => handleDragOver(e, sprint._id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, sprint._id)}
+                    >
+                      {sprint.issues.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400 mt-4">
+                          No issues in this sprint. Drag issues here to add them.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                          {sprint.issues.map((issue) => (
+                            <div
+                              key={issue.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, issue, sprint._id)}
+                              onDragEnd={handleDragEnd}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 hover:shadow-md transition cursor-move"
+                            >
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                                {issue.id}
+                              </p>
+                              <h5 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                {issue.title}
+                              </h5>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.priority === "high"
+                                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
+                                  }`}
+                                >
+                                  {issue.priority.charAt(0).toUpperCase() +
+                                    issue.priority.slice(1)}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.type === "Bug"
+                                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
+                                      : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                                  }`}
+                                >
+                                  {issue.type}
+                                </span>
                               </div>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                                  issue.status === "Due Soon"
-                                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
-                                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-                                }`}
-                              >
-                                {issue.status}
-                              </span>
+                              <div className="flex items-center justify-between">
+                                <div
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                  style={{
+                                    backgroundColor: generateAvatarColor(
+                                      issue.assignee?.username || issue.assignee || "Unknown"
+                                    ),
+                                  }}
+                                >
+                                  {getAvatarInitial(issue.assignee?.username || issue.assignee || "Unknown")}
+                                </div>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-lg border ${
+                                    issue.status === "Due Soon"
+                                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700"
+                                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                                  }`}
+                                >
+                                  {issue.status}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1523,7 +1873,7 @@ function ProjectDetail() {
                             {comment.user?.username || "Unknown"}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatDate(comment.updatedAt)}
+                            {formatRelativeTime(comment.updatedAt)}
                             {comment.updatedAt > comment.createdAt && (
                               <span
                                 className="ml-1 text-xs italic opacity-70"
@@ -1631,11 +1981,10 @@ function ProjectDetail() {
         isOpen={isIssueModalOpen}
         onClose={() => setIsIssueModalOpen(false)}
         onCreateIssue={handleCreateIssueSubmit}
-        projectPropId={projectId} // Quan trọng: Truyền ID để component tự hiểu
+        projectPropId={projectId}
         column={createIssueStatus}
         members={project?.members || []}
-        // sprints={sprints} (Correct form)
-        sprints={sprintsData} // mock data
+        sprints={sprintsData}
       />
 
       {/* ADD MEMBER MODAL */}
@@ -1829,6 +2178,121 @@ function ProjectDetail() {
         onClose={() => setIsCreateSprintModalOpen(false)}
         onCreateSprint={handleCreateSprintSubmit}
       />
+
+      {/* EDIT SPRINT MODAL */}
+      {editingSprint && (
+        <CreateSprint
+          isOpen={isEditSprintModalOpen}
+          onClose={() => {
+            setIsEditSprintModalOpen(false);
+            setEditingSprint(null);
+          }}
+          onCreateSprint={handleUpdateSprintSubmit}
+          initialData={{
+            name: editingSprint.name,
+            startDate: editingSprint.start_date?.split('T')[0],
+            dueDate: editingSprint.end_date?.split('T')[0],
+            goals: editingSprint.goal || "",
+          }}
+          isEditMode={true}
+        />
+      )}
+
+      {/* SPRINT STATS MODAL */}
+      {sprintStatsModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
+                Sprint Statistics
+              </h3>
+              <button
+                onClick={handleCloseStatsModal}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {sprintStatsModal.loading ? (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                Loading statistics...
+              </div>
+            ) : sprintStatsModal.stats ? (
+              <div className="space-y-4">
+                {/* Total Issues */}
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Issues</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {sprintStatsModal.stats.totalIssues || 0}
+                  </p>
+                </div>
+
+                {/* Issues Breakdown */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                    <p className="text-xs text-green-600 dark:text-green-400 mb-1">Completed</p>
+                    <p className="text-xl font-bold text-green-700 dark:text-green-300">
+                      {sprintStatsModal.stats.completedIssues || 0}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">In Progress</p>
+                    <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                      {sprintStatsModal.stats.inProgressIssues || 0}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">To Do</p>
+                    <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
+                      {sprintStatsModal.stats.todoIssues || 0}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Story Points */}
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Story Points</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {sprintStatsModal.stats.completedStoryPoints || 0} / {sprintStatsModal.stats.totalStoryPoints || 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Completion Rate */}
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Completion Rate</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {sprintStatsModal.stats.completionRate || 0}%
+                    </p>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${sprintStatsModal.stats.completionRate || 0}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-red-500 dark:text-red-400">
+                Failed to load statistics
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleCloseStatsModal}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

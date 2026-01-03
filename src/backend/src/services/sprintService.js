@@ -131,8 +131,14 @@ class SprintService {
     }
 
     // Remove sprint reference from all issues
-    for (const issueId of sprint.issues) {
-      await issueRepository.update(issueId, { $unset: { sprint: "" } });
+    if (sprint.issues && sprint.issues.length > 0) {
+      for (const issueId of sprint.issues) {
+        try {
+          await issueRepository.update(issueId, { $unset: { sprint: "" } });
+        } catch (error) {
+          console.error(`Error removing sprint reference from issue ${issueId}:`, error);
+        }
+      }
     }
 
     return await sprintRepository.delete(sprintId);
@@ -149,16 +155,6 @@ class SprintService {
 
     if (sprint.status !== "planning") {
       throw new Error("Only sprints in planning status can be started");
-    }
-
-    // Check if there's already an active sprint
-    const activeSprints = await sprintRepository.findActiveSprints(
-      sprint.project._id
-    );
-    if (activeSprints.length > 0) {
-      throw new Error(
-        "Cannot start sprint. There is already an active sprint in this project."
-      );
     }
 
     const originalDuration = sprint.end_date - sprint.start_date;
