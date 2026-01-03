@@ -52,6 +52,13 @@ class ProjectMembersRepository {
     }).session(session);
     return member ? member.role : null;
   }
+
+  async countMembersByRole(projectId, role, session = null) {
+    return ProjectMember.countDocuments({
+      project: projectId,
+      role: role,
+    }).session(session);
+  }
 }
 
 export const projectMembersRepository = new ProjectMembersRepository();

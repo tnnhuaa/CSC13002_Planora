@@ -278,7 +278,10 @@ function Projects() {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-2 gap-4">
-          {projects.map((project) => (
+          {projects.map((project) => {
+            const role = project.members?.find(member => member.user?._id === currentUser?._id)?.role || "member";
+
+            return (
             <div
               key={project._id}
               onClick={() => navigate(`/projects/${project._id}`)}
@@ -287,10 +290,13 @@ function Projects() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-1">
-                    {project.name}
+                    {project.name} 
+                    <span className="inline-block px-2 py-1 text-xs uppercase font-medium bg-blue-100 dark:bg-blue-500 text-blue-700 dark:text-white rounded ml-2">
+                      {role || "member"}
+                    </span>
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {project.description}
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                    {project.description || <span className="italic">No description.</span>}
                   </p>
                 </div>
                 {isProjectManager(project) && (
@@ -317,10 +323,6 @@ function Projects() {
                 )}
               </div>
 
-              <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded mb-3">
-                Active
-              </span>
-
               {/* Progress Bar */}
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
@@ -328,7 +330,7 @@ function Projects() {
                     Progress
                   </span>
                   <span className="text-slate-800 dark:text-white font-medium">
-                    {project.progress}%
+                    {(project.progress).toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
@@ -383,7 +385,7 @@ function Projects() {
                 </div>
               </div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
 
