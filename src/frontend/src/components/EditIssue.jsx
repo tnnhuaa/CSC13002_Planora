@@ -7,7 +7,7 @@ const Modal = ({ isOpen, onClose, children, title, subtitle }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/30 bg-opacity-50 flex items-center justify-center p-4">
       <div
         className="bg-white dark:bg-slate-900 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transition-all transform duration-300"
         onClick={(e) => e.stopPropagation()}
@@ -58,7 +58,14 @@ const sprintOptions = ["Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4"];
 // Note: You would typically fetch available users dynamically
 const mockAssignedUsers = ["Bob Smith", "Alice Johnson", "Charlie Brown"];
 
-const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
+const EditIssue = ({
+  isOpen,
+  onClose,
+  issueData,
+  onUpdateIssue,
+  sprints = [],
+  members = [],
+}) => {
   // Initialize form state with issueData, ensuring fallbacks for fields
   const [formData, setFormData] = useState({
     title: "",
@@ -67,12 +74,16 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
     type: "task",
     status: "todo",
     dueDate: "",
+    sprint: "",
+    assignee: "",
   });
 
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
     if (issueData) {
+      const sprintId = issueData.sprint?._id || issueData.sprint || "";
+      const assigneeId = issueData.assignee?._id || issueData.assignee || "";
       setFormData({
         title: issueData.title || "",
         description: issueData.description || "",
@@ -82,6 +93,8 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
         dueDate: issueData.due_date
           ? new Date(issueData.due_date).toISOString().substring(0, 10)
           : "",
+        sprint: sprintId,
+        assignee: assigneeId,
       });
     }
   }, [issueData]);
@@ -124,6 +137,8 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
       ...formData,
       // Ensure date is formatted if needed, backend usually handles ISO strings fine
       due_date: formData.dueDate,
+      sprint: formData.sprint || null,
+      assignee: formData.assignee || null,
     };
 
     onUpdateIssue(updatedIssue);
@@ -167,6 +182,55 @@ const EditIssue = ({ isOpen, onClose, issueData, onUpdateIssue }) => {
             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             placeholder="Describe the task..."
           />
+        </div>
+
+        {/* Sprint */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Sprint
+          </label>
+          <select
+            name="sprint"
+            value={formData.sprint}
+            onChange={handleChange}
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Backlog (No Sprint)</option>
+            {sprints
+              .filter((s) => s.status !== "completed") // Optional: Hide completed sprints
+              .map((sprint) => (
+                <option key={sprint._id} value={sprint._id}>
+                  {sprint.name} ({sprint.status})
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {/* Assignee */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Assignee
+          </label>
+          <select
+            name="assignee"
+            value={formData.assignee}
+            onChange={handleChange}
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Unassigned</option>
+            {members.map((member) => {
+              // Handle different member object structures (populated vs ID)
+              const userId = member.user?._id || member.user || member._id;
+              const username =
+                member.user?.username || member.username || "Unknown User";
+
+              return (
+                <option key={userId} value={userId}>
+                  {username}
+                </option>
+              );
+            })}
+          </select>
         </div>
 
         {/* Priority, Type, Status Row */}
