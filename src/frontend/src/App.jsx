@@ -1,6 +1,8 @@
 // src/App.jsx
 import React, { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // Import trang
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -47,6 +49,7 @@ function App() {
   }, []); // Chạy 1 lần khi web load
 
   return (
+    <>
     <HashRouter>
       <Routes>
         {/* Public */}
@@ -123,6 +126,20 @@ function App() {
         </Route>
       </Routes>
     </HashRouter>
+    <ToastContainer
+    position="top-right"
+    autoClose={3000}
+    hideProgressBar={false}
+    newestOnTop={false}
+    closeOnClick
+    rtl={false}
+    pauseOnFocusLoss
+    draggable
+    pauseOnHover
+    theme="colored"
+    progressClassName="toastProgress"
+  />
+  </>
   );
 }
 

@@ -8,6 +8,18 @@ const router = express.Router();
 
 // Create issue
 router.post("/", authorize("user"), issueController.create);
+router.post("/project/:projectId", authorize("user"), issueController.create);
+
+router.get(
+  "/project/:projectId/backlog",
+  authorize("user"),
+  issueController.getBacklogByProject
+);
+router.get(
+  "/project/:projectId/board",
+  authorize("user"),
+  issueController.getBoardByProject
+);
 
 // Get issues (Controller handle role)
 router.get("/", authorize("user"), issueController.getIssuesForUser);

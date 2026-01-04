@@ -14,6 +14,13 @@ import {
   Trash2,
   Edit2,
   CheckCircle,
+  LayoutGrid,
+  List,
+  Target,
+  ChevronRight,
+  Play,
+  BarChart,
+  ArrowLeft,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -28,6 +35,11 @@ import CommentInput from "../components/CommentInput";
 import CommentText from "../components/CommentText";
 import EditIssue from "../components/EditIssue";
 import DeleteIssueConfirmation from "../components/DeleteIssueConfirmation";
+import CreateSprint from "../components/CreateSprint";
+import { showToast } from "../utils/toastUtils";
+import { sprintService } from "../services/sprintService";
+import SprintBoard from "../components/SprintBoard";
+import BacklogBoard from "../components/BacklogBoard";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -50,7 +62,10 @@ function ProjectDetail() {
   const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
   const [isDeleteIssueModalOpen, setIsDeleteIssueModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
-
+  const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
+  const [openMemberMenu, setOpenMemberMenu] = useState(null);
+  const [sprintsData, setSprintsData] = useState([]);
+  const [createIssueStatus, setCreateIssueStatus] = useState("todo");
   const {
     searchTerm,
     filters,
@@ -97,10 +112,22 @@ function ProjectDetail() {
       console.error("Failed to fetch project details:", error);
     }
   };
+
+  const fetchSprints = async () => {
+    try {
+      const response = await sprintService.getSprintsByProject(projectId);
+      setSprintsData(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch sprints:", error);
+      // Optional: showToast.error("Failed to load sprints");
+    }
+  };
+
   useEffect(() => {
     const initFetch = async () => {
       setLoading(true);
       await fetchProjectDetails();
+      await fetchSprints();
       setLoading(false);
     };
 
@@ -116,9 +143,10 @@ function ProjectDetail() {
       await fetchProjectDetails();
 
       setIsIssueModalOpen(false);
+      showToast.success("Issue created successfully");
     } catch (error) {
       console.error("Failed to create issue:", error);
-      alert("Failed to create issue");
+      showToast.error("Failed to create issue");
     }
   };
 
@@ -140,6 +168,7 @@ function ProjectDetail() {
       setComments(response.data || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
+      showToast.error("Failed to fetch comments");
     } finally {
       setLoadingComments(false);
     }
@@ -152,8 +181,9 @@ function ProjectDetail() {
       await commentService.createComment(selectedIssue._id, newComment.trim());
       setNewComment("");
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment added successfully");
     } catch (error) {
-      alert("Failed to add comment");
+      showToast.error("Failed to add comment");
     }
   };
 
@@ -170,9 +200,10 @@ function ProjectDetail() {
       setEditingCommentId(null);
       setEditingMessage("");
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment updated successfully");
     } catch (error) {
       console.error("Failed to update comment:", error);
-      alert(error.message || "Failed to update comment");
+      showToast.error(error.message || "Failed to update comment");
     }
   };
 
@@ -182,13 +213,23 @@ function ProjectDetail() {
     try {
       await commentService.deleteComment(commentId);
       await fetchComments(selectedIssue._id);
+      showToast.success("Comment deleted successfully");
     } catch (error) {
       console.error("Failed to delete comment:", error);
-      alert(error.message || "Failed to delete comment");
+      showToast.error(error.message || "Failed to delete comment");
     }
   };
 
+  // Format date helper function
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    return date.toLocaleDateString('vi-VN', options);
+  };
+
+  // Format relative time for comments
+  const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -200,7 +241,7 @@ function ProjectDetail() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   };
 
   // Add member handlers
@@ -255,7 +296,7 @@ function ProjectDetail() {
   const handleAddMemberSubmit = async (e) => {
     e.preventDefault();
     if (selectedMembers.length === 0) {
-      alert("Please select at least one member!");
+      showToast.error("Please select at least one member!");
       return;
     }
     try {
@@ -264,16 +305,16 @@ function ProjectDetail() {
         await projectService.addMemberToProject(projectId, member);
       }
 
-      // Fetch lại data
+      // Fetch updated project details
       await fetchProjectDetails();
 
-      // Close modal và reset
+      // Close modal & reset
       setIsAddMemberModalOpen(false);
       setSelectedMembers([]);
       setSearchQuery("");
     } catch (error) {
       console.error("Failed to add members:", error);
-      alert("Failed to add members");
+      showToast.error("Failed to add members");
     }
   };
 
@@ -281,6 +322,33 @@ function ProjectDetail() {
     setIsAddMemberModalOpen(false);
     setSelectedMembers([]);
     setSearchQuery("");
+  };
+
+  const handleChangeMemberRole = async (memberId, newRole) => {
+    try {
+      await projectService.changeMemberRole(projectId, memberId, newRole);
+      await fetchProjectDetails();
+      setOpenMemberMenu(null);
+      showToast.success("Member role updated successfully");
+    } catch (error) {
+      console.error("Failed to change member role:", error);
+      showToast.error("Failed to change member role");
+    }
+  };
+
+  const handleRemoveMember = async (memberId, memberName) => {
+    if (!window.confirm(`Are you sure you want to remove ${memberName} from this project?`)) {
+      return;
+    }
+    try {
+      await projectService.removeMemberFromProject(projectId, memberId);
+      await fetchProjectDetails();
+      setOpenMemberMenu(null);
+      showToast.success("Member removed successfully");
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      showToast.error("Failed to remove member");
+    }
   };
 
   const handleEditIssue = (issue, e) => {
@@ -296,19 +364,17 @@ function ProjectDetail() {
         updatedIssueData
       );
 
-      setIssues((prevIssues) =>
-        prevIssues.map((issue) =>
-          issue._id === updatedIssueData._id
-            ? { ...issue, ...updatedIssueData }
-            : issue
-        )
-      );
+      // Fetch latest data from backend
+      await fetchProjectDetails();
+      await fetchSprints();
 
       setIsEditIssueModalOpen(false);
       setSelectedIssue(null);
+
+      showToast.success("Issue updated successfully");
     } catch (error) {
       console.error("Failed to update issue:", error);
-      alert("Failed to update issue: " + error.message);
+      showToast.error("Failed to update issue: " + error.message);
     }
   };
 
@@ -325,10 +391,19 @@ function ProjectDetail() {
 
     setIsDeleteIssueModalOpen(false);
     setSelectedIssue(null);
+
+    // Fetch data
+    fetchProjectDetails();
+    fetchSprints();
   };
 
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
+  };
+
+  const handleOpenCreateModal = (status) => {
+    setCreateIssueStatus(status);
+    setIsIssueModalOpen(true);
   };
 
   const getPriorityColor = (priority) => {
@@ -405,6 +480,10 @@ function ProjectDetail() {
     return colors[role] || colors.Member;
   };
 
+  const isManager = project.members?.some(
+    (member) => member.user?._id === user?._id && member.role === "manager"
+  );
+
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
       {/* Header */}
@@ -418,9 +497,9 @@ function ProjectDetail() {
         </button>
         <div>
           <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
-            {project.title || "Project Details"}
+            {project.name || "Project Details"}
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400 italic">
             {project.description}
           </p>
         </div>
@@ -492,7 +571,7 @@ function ProjectDetail() {
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
                   {project.createdAt
-                    ? new Date(project.createdAt).toLocaleDateString()
+                    ? formatDate(project.createdAt)
                     : "01/01/2025"}
                 </p>
               </div>
@@ -515,7 +594,7 @@ function ProjectDetail() {
                   Overall Progress
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {project.progress}%
+                  {(project.progress).toFixed(1)}%
                 </p>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
@@ -530,11 +609,17 @@ function ProjectDetail() {
 
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                Current Sprint
+                Active Sprint
               </p>
-              <span className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-medium rounded-lg">
-                Sprint 3
-              </span>
+              {sprintsData.map((sprint) => (
+                sprint.status === "active" && (
+                  <span
+                    key={sprint._id}
+                    className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-medium rounded-lg mr-2">
+                      {sprint.name}
+                  </span>
+                )
+              ))}
             </div>
           </div>
         </div>
@@ -546,22 +631,28 @@ function ProjectDetail() {
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
               Team Members
             </h3>
-            <button
-              onClick={() => setIsAddMemberModalOpen(true)}
-              className="ml-auto flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
-            >
-              <Plus size={16} />
-              <span>Add member</span>
-            </button>
+            {isManager && (
+              <button
+                onClick={() => setIsAddMemberModalOpen(true)}
+                className="ml-auto flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus size={16} />
+                <span>Add member</span>
+              </button>
+            )}
           </div>
           <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
             <div className="space-y-3">
               {teamMembers.map((member) => {
                 const avatarColor = generateAvatarColor(member.user?.username);
+                // Get current user's role in project
+                const currentUserMember = teamMembers.find(m => m.user?._id === user?._id);
+                const currentUserRole = currentUserMember?.role;
+                
                 return (
                   <div
-                    key={member.user?.username}
-                    className="flex items-center gap-3"
+                    key={member.user?._id}
+                    className="flex items-center gap-3 group"
                   >
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -571,16 +662,85 @@ function ProjectDetail() {
                     >
                       {getAvatarInitial(member.user?.username)}
                     </div>
-                    <span className="text-sm text-slate-900 dark:text-white">
+                    <span className="text-sm text-slate-900 dark:text-white flex-1">
                       {member.user?.username}
                     </span>
                     <span
-                      className={`ml-auto px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(
+                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${getRoleColor(
                         member.role
                       )}`}
                     >
                       {member.role || "Member"}
                     </span>
+                    
+                    {/* Member actions menu - only show if user is manager and not own profile */}
+                    {isManager && member.user?._id !== user?._id ? (
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMemberMenu(
+                              openMemberMenu === member.user?._id ? null : member.user?._id
+                            );
+                          }}
+                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition"
+                        >
+                          <MoreVertical size={14} className="text-slate-600 dark:text-slate-400" />
+                        </button>
+
+                      {openMemberMenu === member.user?._id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setOpenMemberMenu(null)}
+                          />
+                          <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[160px]">
+                            {/* Change Role submenu */}
+                            <div className="px-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                              Change Role
+                            </div>
+                            {["manager", "member", "viewer"].map((role) => (
+                              <button
+                                key={role}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (role !== member.role) {
+                                    handleChangeMemberRole(member.user?._id, role);
+                                  }
+                                }}
+                                disabled={role === member.role}
+                                className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition ${
+                                  role === member.role
+                                    ? "text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                {role === member.role && (
+                                  <CheckCircle size={14} className="text-primary" />
+                                )}
+                                <span className="capitalize">{role}</span>
+                              </button>
+                            ))}
+                            
+                            {/* Remove member button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveMember(member.user?._id, member.user?.username);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition border-t border-slate-200 dark:border-slate-700"
+                            >
+                              <Trash2 size={14} />
+                              Remove
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    ) : (
+                      // Placeholder to maintain consistent spacing
+                      <div className="w-[20px]"></div>
+                    )}
                   </div>
                 );
               })}
@@ -591,152 +751,223 @@ function ProjectDetail() {
 
       {/* Issues/Issues Section */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Issues ({issues.length})
-          </h3>
+        {/* Tab Navigation */}
+        <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl p-1 inline-flex gap-1 mb-6">
           <button
-            onClick={() => setIsIssueModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+            onClick={() => setActiveTab("issues")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "issues"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
           >
-            <Plus size={16} />
-            Create Issue
+            <LayoutGrid size={16} />
+            Issues
+          </button>
+          <button
+            onClick={() => setActiveTab("sprints")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "sprints"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <List size={16} />
+            Sprints
+          </button>
+          <button
+            onClick={() => setActiveTab("backlog")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              activeTab === "backlog"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Target size={16} />
+            Backlog
           </button>
         </div>
 
-        {/* Filters and Search */}
-        <div className="flex gap-3 mb-4 flex-wrap">
-          <TaskFilterBar
-            searchTerm={searchTerm}
-            filters={filters}
-            sortOrder={sortOrder}
-            openFilter={openFilter}
-            setSearchTerm={setSearchTerm}
-            handleFilterChange={handleFilterChange}
-            setOpenFilter={setOpenFilter}
-            getUniqueTypes={getUniqueTypes}
-            getUniquePriorities={getUniquePriorities}
-            getUniqueAssignees={getUniqueAssignees}
-            toggleSortOrder={toggleSortOrder}
-            getPriorityDisplay={getPriorityDisplay}
-          />
-        </div>
+        {/* Issues Tab Content */}
+        {activeTab === "issues" && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Issues ({issues.length})
+              </h3>
+              <button
+                onClick={() => setIsIssueModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus size={16} />
+                Create Issue
+              </button>
+            </div>
 
-        {/* Kanban Board */}
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
-            {["To Do", "In Progress", "Review", "Done"].map((status) => {
-              const statusIssues = getIssuesByStatus(
-                status === "To Do"
-                  ? "todo"
-                  : status === "In Progress"
-                  ? "in_progress"
-                  : status === "Review"
-                  ? "in_review"
-                  : "done"
-              );
+            {/* Filters and Search */}
+            <div className="flex gap-3 mb-4 flex-wrap">
+              <TaskFilterBar
+                searchTerm={searchTerm}
+                filters={filters}
+                sortOrder={sortOrder}
+                openFilter={openFilter}
+                setSearchTerm={setSearchTerm}
+                handleFilterChange={handleFilterChange}
+                setOpenFilter={setOpenFilter}
+                getUniqueTypes={getUniqueTypes}
+                getUniquePriorities={getUniquePriorities}
+                getUniqueAssignees={getUniqueAssignees}
+                toggleSortOrder={toggleSortOrder}
+                getPriorityDisplay={getPriorityDisplay}
+              />
+            </div>
 
-              return (
-                <div key={status} className="w-64 flex flex-col gap-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-slate-900 dark:text-white text-sm">
-                      {status}
-                    </h4>
-                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
-                      {statusIssues.length}
-                    </span>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
-                    {statusIssues.map((issue) => {
-                      const daysLeft = calculateDaysLeft(issue.due_date);
-                      const issueOver = daysLeft !== null && daysLeft < 0;
-                      console.log(issueOver);
-                      return (
-                        <div
-                          key={issue._id}
-                          onClick={() => handleIssueClick(issue)}
-                          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                              {issue.issueId}
-                            </p>
-                          </div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
-                            {issue.title}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => handleEditIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
-                              title="Edit issue"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteIssue(issue, e)}
-                              className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
-                              title="Delete issue"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
-                                issue.priority
-                              )}`}
-                            >
-                              {issue.priority}
-                            </span>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
-                                issue.type
-                              )}`}
-                            >
-                              {issue.type}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
+            {/* Kanban Board */}
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
+                {["To Do", "In Progress", "Review", "Done"].map((status) => {
+                  const statusIssues = getIssuesByStatus(
+                    status === "To Do"
+                      ? "todo"
+                      : status === "In Progress"
+                      ? "in_progress"
+                      : status === "Review"
+                      ? "in_review"
+                      : "done"
+                  );
+
+                  return (
+                    <div key={status} className="w-64 flex flex-col gap-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-slate-900 dark:text-white text-sm">
+                          {status}
+                        </h4>
+                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full font-medium">
+                          {statusIssues.length}
+                        </span>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
+                        {statusIssues.map((issue) => {
+                          const daysLeft = calculateDaysLeft(issue.due_date);
+                          const issueOver = daysLeft !== null && daysLeft < 0;
+                          return (
                             <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                              style={{
-                                backgroundColor: generateAvatarColor(
-                                  issue.assignee?.username || "Unknown"
-                                ),
-                              }}
+                              key={issue._id}
+                              onClick={() => handleIssueClick(issue)}
+                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
                             >
-                              {getAvatarInitial(
-                                issue.assignee?.username || "Unknown"
-                              )}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
+                                  {issue.title}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={(e) => handleEditIssue(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
+                                    title="Edit issue"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteIssue(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                                    title="Delete issue"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-md border ${getPriorityColor(
+                                    issue.priority
+                                  )}`}
+                                >
+                                  {issue.priority}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-md border ${getTypeColor(
+                                    issue.type
+                                  )}`}
+                                >
+                                  {issue.type}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                  style={{
+                                    backgroundColor: generateAvatarColor(
+                                      issue.assignee?.username || "Unknown"
+                                    ),
+                                  }}
+                                >
+                                  {getAvatarInitial(
+                                    issue.assignee?.username || "Unknown"
+                                  )}
+                                </div>
+                                {issue.due_date && (
+                                  <span
+                                    className={`px-2 py-1 text-xs font-medium rounded-md border ${getDueDateColor(
+                                      issue.due_date
+                                    )}`}
+                                  >
+                                    {getDueDateLabel(issue.due_date)}
+                                  </span>
+                                )}
+                                {issueOver && (
+                                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                                    Expired
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            {issue.due_date && (
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-md border ${getDueDateColor(
-                                  issue.due_date
-                                )}`}
-                              >
-                                {getDueDateLabel(issue.due_date)}
-                              </span>
-                            )}
-                            {issueOver && (
-                              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
-                                Expired
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
-                      <Plus size={16} className="mx-auto" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                          );
+                        })}
+                        <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
+                          <Plus size={16} className="mx-auto" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Sprints Tab Content */}
+        {activeTab === "sprints" && (
+          <SprintBoard
+            sprintsData={sprintsData}
+            issues={issues}
+            onSprintsUpdate={fetchSprints}
+            onIssuesUpdate={fetchProjectDetails}
+            projectId={projectId}
+            onCreateIssue={handleOpenCreateModal}
+            onDeleteIssue={handleDeleteIssue}
+            onIssueClick={handleIssueClick}
+            formatDate={formatDate}
+            calculateDaysLeft={calculateDaysLeft}
+          />
+        )}
+
+        {/* Backlog Tab Content */}
+        {activeTab === "backlog" && (
+          <BacklogBoard
+            sprintsData={sprintsData}
+            issues={issues}
+            onSprintsUpdate={fetchSprints}
+            onIssuesUpdate={fetchProjectDetails}
+            projectId={projectId}
+            onCreateIssue={handleOpenCreateModal}
+            onDeleteIssue={handleDeleteIssue}
+            onIssueClick={handleIssueClick}
+            formatDate={formatDate}
+            calculateDaysLeft={calculateDaysLeft}
+          />
+        )}
       </div>
 
       {/* Comment Section */}
@@ -815,7 +1046,7 @@ function ProjectDetail() {
                             {comment.user?.username || "Unknown"}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatDate(comment.updatedAt)}
+                            {formatRelativeTime(comment.updatedAt)}
                             {comment.updatedAt > comment.createdAt && (
                               <span
                                 className="ml-1 text-xs italic opacity-70"
@@ -923,9 +1154,10 @@ function ProjectDetail() {
         isOpen={isIssueModalOpen}
         onClose={() => setIsIssueModalOpen(false)}
         onCreateIssue={handleCreateIssueSubmit}
-        projectPropId={projectId} // Quan trọng: Truyền ID để component tự hiểu
-        column="todo"
+        projectPropId={projectId}
+        column={createIssueStatus}
         members={project?.members || []}
+        sprints={sprintsData}
       />
 
       {/* ADD MEMBER MODAL */}
@@ -1096,6 +1328,8 @@ function ProjectDetail() {
           }}
           issueData={selectedIssue}
           onUpdateIssue={handleUpdateIssueSubmit}
+          sprints={sprintsData}
+          members={project?.members || []}
         />
       )}
 

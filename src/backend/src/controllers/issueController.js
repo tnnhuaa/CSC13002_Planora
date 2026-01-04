@@ -5,27 +5,63 @@ class IssueController {
   async create(req, res) {
     try {
       const reporterId = req.user._id;
-      const { project: projectId } = req.body;
+      let projectId = req.params.projectId;
+      if (!projectId) {
+        projectId = req.body.project;
+      }
 
       // Only project managers can create issues for their projects
       const project = await projectService.getProjectById(
         projectId,
         reporterId
       );
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+
+      if (!projectId) {
+        return res.status(400).json({ message: "Project ID is required" });
       }
 
-      const isProjectManager =
-        project.manager._id.toString() === reporterId.toString();
-      if (!isProjectManager) {
-        return res
-          .status(403)
-          .json({ message: "Only project managers can create issues" });
+      // const isProjectManager =
+      //   project.manager._id.toString() === reporterId.toString();
+      // if (!isProjectManager) {
+      //   return res
+      //     .status(403)
+      //     .json({ message: "Only project managers can create issues" });
+      // }
+
+      const { type, assignee, sprint, ...otherData } = req.body;
+
+      // Validate type
+      if (type && !["task", "bug"].includes(type)) {
+        return res.status(400).json({
+          message: 'Invalid issue type. Must be either "task" or "bug"',
+        });
+      }
+
+      // Validate assignee for tasks
+      const issueType = type || "task";
+
+      if (issueType === "task" && !assignee) {
+        return res.status(400).json({
+          message: "Tasks must be assigned to a member",
+        });
+      }
+
+      // Determine initial status based on type and sprint
+      // Only tasks with sprint go to todo, everything else goes to backlog
+      let status;
+      if (issueType === "task" && sprint) {
+        status = "todo";
+      } else {
+        status = "backlog";
       }
 
       const issueData = {
-        ...req.body,
+        ...otherData,
+        type: issueType,
+        assignee: issueType === "task" ? assignee : null,
+        sprint: sprint || null,
+        status,
+        project: projectId,
         reporter: reporterId,
       };
 
@@ -79,13 +115,6 @@ class IssueController {
         return res.status(404).json({ message: "Project not found" });
       }
 
-      const isProjectManager =
-        project.manager._id.toString() === userId.toString();
-      const isProjectMember = (project.members || []).some(
-        (member) => member._id.toString() === userId.toString()
-      );
-
-      console.log({ isProjectManager, isProjectMember });
       if (role === "admin") {
         const issues = await issueService.getIssuesByProject(projectId);
         return res.status(200).json({
@@ -94,20 +123,20 @@ class IssueController {
         });
       }
 
+      const isProjectManager =
+        project.manager._id.toString() === userId.toString();
+
+      const isProjectMember = (project.members || []).some(
+        (member) => member._id.toString() === userId.toString()
+      );
+
       if (!isProjectManager && !isProjectMember) {
         return res
           .status(403)
           .json({ message: "You are not a member of this project" });
       }
 
-      let issues = await issueService.getIssuesByProject(projectId);
-
-      // Team members can only see issues assigned to them
-      if (!isProjectManager) {
-        issues = issues.filter(
-          (issue) => issue.assignee._id.toString() === userId.toString()
-        );
-      }
+      const issues = await issueService.getIssuesByProject(projectId);
 
       return res.status(200).json({
         message: `Get issues for project successfully!`,
@@ -156,11 +185,63 @@ class IssueController {
     }
   }
 
+  async getBacklogByProject(req, res) {
+    try {
+      const { projectId } = req.params;
+      const issues = await issueService.getBacklog(projectId);
+      return res.status(200).json({
+        message: "Get backlog successfully!",
+        data: issues,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getBoardByProject(req, res) {
+    try {
+      const { projectId } = req.params;
+      const issues = await issueService.getBoard(projectId);
+      return res.status(200).json({
+        message: "Get board successfully!",
+        data: issues,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   async updateIssue(req, res) {
     try {
       const { id } = req.params;
       const updateData = req.body;
       const currentUser = req.user;
+
+      // Get current issue to check type
+      const currentIssue = await issueService.getIssueById(id);
+
+      // Determine the type (use update if provided, otherwise current)
+      const issueType = updateData.type || currentIssue.type;
+
+      // Handle assignee update
+      if (updateData.assignee !== undefined) {
+        // If changing to task or already a task, ensure assignee exists
+        if (issueType === "task" && !updateData.assignee) {
+          return res.status(400).json({
+            message: "Tasks must be assigned to a member",
+          });
+        }
+
+        // If removing assignee from a task, move to backlog
+        if (currentIssue.type === "task" && !updateData.assignee) {
+          updateData.status = "backlog";
+        }
+
+        // Bugs don't need assignee
+        if (issueType === "bug") {
+          updateData.assignee = null;
+        }
+      }
 
       const updatedIssue = await issueService.updateIssue(
         id,
