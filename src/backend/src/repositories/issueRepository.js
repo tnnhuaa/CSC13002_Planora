@@ -82,6 +82,7 @@ class IssueRepository {
   async findByProjects(projectIds) {
     return await Issue.find({ project: { $in: projectIds } })
       .populate("assignee reporter", "username email avatarURL")
+      .populate("project", "name key")
       .sort({ createdAt: -1 });
   }
 
