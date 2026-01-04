@@ -42,6 +42,7 @@ class IssueRepository {
     })
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
+      .populate("sprint", "name")
       .sort({ listPosition: 1 }); // Sorted by custom order
   }
 
@@ -52,6 +53,7 @@ class IssueRepository {
     })
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
+      .populate("sprint", "name")
       .sort({ listPosition: 1 });
   }
 
@@ -59,7 +61,8 @@ class IssueRepository {
     return await Issue.find(filter)
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
-      .populate("project", "name key");
+      .populate("project", "name key")
+      .populate("sprint", "name");
   }
 
   async findById(id) {
@@ -67,6 +70,7 @@ class IssueRepository {
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
       .populate("project")
+      .populate("sprint", "name")
       .populate({
         path: "comments",
         populate: { path: "user", select: "username avatarURL" },
@@ -76,13 +80,15 @@ class IssueRepository {
   async findByAssigneeId(userId) {
     return await Issue.find({ assignee: userId })
       .populate("assignee reporter", "username email avatarURL")
-      .populate("project", "name key");
+      .populate("project", "name key")
+      .populate("sprint", "name");
   }
 
   async findByProjects(projectIds) {
     return await Issue.find({ project: { $in: projectIds } })
       .populate("assignee reporter", "username email avatarURL")
       .populate("project", "name key")
+      .populate("sprint", "name")
       .sort({ createdAt: -1 });
   }
 
