@@ -88,8 +88,8 @@ const IssueOverview = ({ isOpen, issue, onClose }) => {
 
                 {/* Content */}
                 <div className="p-6 space-y-4">
-                    {/* Project Name & Issue Title */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Project Name, Sprint & Issue Title */}
+                    <div className="grid grid-cols-3 gap-4">
                         {/* Project Name */}
                         <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
@@ -99,6 +99,16 @@ const IssueOverview = ({ isOpen, issue, onClose }) => {
                                 {issue.project?.name ||
                                     issue.projectName ||
                                     "Unknown Project"}
+                            </p>
+                        </div>
+
+                        {/* Sprint name */}
+                        <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                                SPRINT
+                            </p>
+                            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                                {issue.sprint?.name || "No Sprint"}
                             </p>
                         </div>
 

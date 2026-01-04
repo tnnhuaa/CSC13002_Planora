@@ -304,7 +304,7 @@ class ProjectService {
     );
 
     const managedProjects = projectMembers
-      .filter((pm) => pm.role === "manager")
+      .filter((pm) => pm.role === "manager" && pm.project)
       .map((pm) => pm.project);
 
     return managedProjects;

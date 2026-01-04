@@ -836,8 +836,18 @@ function ProjectDetail() {
                       : "done"
                   );
 
+                  const getStatusBgColor = (status) => {
+                    const colors = {
+                      "To Do": "bg-slate-200 dark:bg-slate-700",
+                      "In Progress": "bg-sky-100 dark:bg-blue-900",
+                      "Review": "bg-indigo-100 dark:bg-indigo-800",
+                      "Done": "bg-emerald-100 dark:bg-emerald-800",
+                    };
+                    return colors[status] || "bg-gray-50 dark:bg-slate-700";
+                  };
+
                   return (
-                    <div key={status} className="w-64 flex flex-col gap-3">
+                    <div key={status} className="w-80 flex flex-col gap-3">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-slate-900 dark:text-white text-sm">
                           {status}
@@ -846,7 +856,7 @@ function ProjectDetail() {
                           {statusIssues.length}
                         </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-3 min-h-[200px] space-y-2">
+                      <div className={`${getStatusBgColor(status)} rounded-lg p-3 min-h-[200px] space-y-2`}>
                         {statusIssues.map((issue) => {
                           const daysLeft = calculateDaysLeft(issue.due_date);
                           const issueOver = daysLeft !== null && daysLeft < 0;
