@@ -178,8 +178,10 @@ export const useDashboard = () => {
             await issueService.updateIssue(draggedIssue.issueId, {
                 status: mapColumnToStatus(targetColumn),
             });
+            showToast.success(`Issue moved to ${targetColumn} successfully`);
         } catch (error) {
             console.error("Error updating issue status:", error);
+            showToast.error("Failed to update issue status");
             // Nếu lỗi, nên revert lại UI (Optional: fetchIssues() lại)
             fetchIssues();
         }
