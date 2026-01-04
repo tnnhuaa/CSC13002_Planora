@@ -47,6 +47,27 @@ function SprintBoard({
   const [draggedIssue, setDraggedIssue] = useState(null);
   const [dragOverSprint, setDragOverSprint] = useState(null);
 
+  // Color utility functions
+  const getPriorityColor = (priority) => {
+    const colors = {
+      high: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      medium:
+        "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700",
+      low: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+    };
+    return colors[priority] || colors.medium;
+  };
+
+  const getTypeColor = (type) => {
+    const colors = {
+      task: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700",
+      bug: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700",
+      story:
+        "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700",
+    };
+    return colors[type] || colors.task;
+  };
+
   // Sync local state with props
   useEffect(() => {
     setLocalSprintsData(sprintsData);
@@ -325,7 +346,7 @@ function SprintBoard({
   const renderSprintCard = (sprint, showActions = true) => (
     <div
       key={sprint._id}
-      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-visible mt-3"
+      className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-visible mt-3"
     >
       {/* Sprint Header */}
       <div className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
@@ -533,21 +554,17 @@ function SprintBoard({
                   </h5>
                   <div className="flex flex-wrap gap-2 mb-3">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                        issue.priority === "high"
-                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                          : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700"
-                      }`}
+                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${getPriorityColor(
+                        issue.priority
+                      )}`}
                     >
                       {issue.priority.charAt(0).toUpperCase() +
                         issue.priority.slice(1)}
                     </span>
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${
-                        issue.type === "Bug"
-                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700"
-                          : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700"
-                      }`}
+                      className={`px-2 py-1 text-xs font-medium rounded-lg border ${getTypeColor(
+                        issue.type
+                      )}`}
                     >
                       {issue.type}
                     </span>
@@ -715,13 +732,9 @@ function SprintBoard({
 
                       <div className="flex flex-wrap gap-2 mb-4">
                         <span
-                          className={`px-2 py-0.5 text-xs font-bold rounded border ${
-                            issue.priority === "high"
-                              ? "bg-red-900/30 text-red-500 border-red-900"
-                              : issue.priority === "low"
-                              ? "bg-blue-900/30 text-blue-500 border-blue-900"
-                              : "bg-yellow-900/30 text-yellow-500 border-yellow-900"
-                          }`}
+                          className={`px-2 py-0.5 text-xs font-bold rounded border ${getPriorityColor(
+                            issue.priority || "medium"
+                          )}`}
                         >
                           {issue.priority
                             ? issue.priority.toUpperCase()
@@ -729,11 +742,9 @@ function SprintBoard({
                         </span>
 
                         <span
-                          className={`px-2 py-0.5 text-xs font-bold rounded border ${
-                            issue.type === "bug"
-                              ? "bg-red-900/30 text-red-400 border-red-900"
-                              : "bg-blue-900/30 text-blue-400 border-blue-900"
-                          }`}
+                          className={`px-2 py-0.5 text-xs font-bold rounded border ${getTypeColor(
+                            issue.type || "task"
+                          )}`}
                         >
                           {issue.type || "task"}
                         </span>

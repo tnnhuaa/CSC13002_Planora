@@ -16,7 +16,7 @@ function TaskFilterBar({
     getPriorityDisplay,
 }) {
     return (
-        <div className="flex gap-3 mb-4 flex-wrap">
+        <div className="flex gap-3 mb-4 flex-wrap w-full">
             <div className="flex-1 min-w-[200px] flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg">
                 <Search size={16} className="text-slate-400" />
                 <input
