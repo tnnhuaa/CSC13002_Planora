@@ -19,7 +19,7 @@ const CreateIssue = ({
     type: "task",
     project: projectPropId || "",
     assignee: "",
-    start_due: "",
+    start_date: "",
     due_date: "",
     status: "todo",
   };
