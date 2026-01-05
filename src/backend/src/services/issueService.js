@@ -67,14 +67,24 @@ class IssueService {
   }
 
   async create(issueData) {
-    const { title, project, assignee, reporter } = issueData;
+    const { title, project, assignee, reporter, type } = issueData;
 
     // Validate input
     if (!title || !project || !reporter) {
       throw new Error("Title, project, and reporter are required!");
     }
 
-    if (assignee) await this.validateAssigneeNotBanned(assignee);
+    // Validate task type has assignee
+    const issueType = type || "task";
+
+    if (issueType === "task" && !assignee) {
+      throw new Error("Tasks must be assigned to a member");
+    }
+
+    // Validate assignee
+    if (assignee) {
+      await this.validateAssigneeNotBanned(assignee);
+    }
 
     const projectExists = await projectRepository.findProjectById(project);
     if (!projectExists) {
@@ -124,6 +134,10 @@ class IssueService {
         console.error("Failed to link new issue to sprint:", error);
       }
     }
+    projectExists.issueCount = (projectExists.issueCount || 0) + 1;
+    await projectRepository.updateProject(projectExists._id, {
+      issueCount: projectExists.issueCount,
+    });
 
     return createdIssue;
   }

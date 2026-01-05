@@ -12,8 +12,9 @@ import {
     AlertCircle,
     TrendingUp,
     Users2,
+    ChartNoAxesGantt,
+    FolderKanban
 } from "lucide-react";
-import CreateIssue from "../components/CreateIssue";
 import EditIssue from "../components/EditIssue";
 import IssueOverview from "../components/IssueOverview";
 import { useDashboard } from "../hooks/UseDashboard";
@@ -102,28 +103,31 @@ const IssueCard = ({
     );
 };
 
-const StatCard = ({ icon: Icon, title, value, trend, isPositive }) => (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                {title}
-            </p>
-            <div className="bg-primary/30 dark:bg-primary/30 p-2 rounded-xl">
-                <Icon size={18} className="text-primary dark:text-primary" />
+const StatCard = ({ icon, title, value, trend, isPositive }) => {
+    const Icon = icon;
+    return (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {title}
+                </p>
+                <div className="bg-primary/30 dark:bg-primary/30 p-2 rounded-xl">
+                    <Icon size={18} className="text-primary dark:text-primary" />
+                </div>
             </div>
+            <p className="text-3xl font-medium text-slate-900 dark:text-white mb-1">
+                {value}
+            </p>
+            <p
+                className={`text-xs font-medium ${
+                    isPositive ? "text-green-600" : "text-red-600"
+                }`}
+            >
+                {trend}
+            </p>
         </div>
-        <p className="text-3xl font-medium text-slate-900 dark:text-white mb-1">
-            {value}
-        </p>
-        <p
-            className={`text-xs font-medium ${
-                isPositive ? "text-green-600" : "text-red-600"
-            }`}
-        >
-            {trend}
-        </p>
-    </div>
-);
+    );
+};
 
 export default function Dashboard() {
     const {
@@ -131,13 +135,8 @@ export default function Dashboard() {
         setActiveTab,
         searchQuery,
         setSearchQuery,
-        isAddIssueModalOpen,
-        setIsAddIssueModalOpen,
-        selectedColumn,
         issues,
         issueToEdit,
-        handleAddIssueClick,
-        handleCreateIssue,
         handleDragStart,
         handleDragOver,
         handleDrop,
@@ -229,13 +228,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <button
-                    onClick={() => handleAddIssueClick("To Do")}
-                    className="bg-primary hover:bg-primary text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors w-full md:w-auto flex items-center justify-center gap-2"
-                >
-                    <Plus size={16} />
-                    Create Issue
-                </button>
             </div>
 
             {/* Stats Cards */}
@@ -281,17 +273,13 @@ export default function Dashboard() {
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
+                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
+                            <FolderKanban size={16} />
+                            Project
+                        </button>
                         <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <CheckCircle2 size={16} />
-                            My Issues
-                        </button>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <Filter size={16} />
-                            Priority
-                        </button>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <Users2 size={16} />
-                            Assignee
+                            <ChartNoAxesGantt size={16} />
+                            Sprint
                         </button>
                     </div>
 
@@ -341,13 +329,6 @@ export default function Dashboard() {
                                     );
                                 })}
                             </div>
-                            <button
-                                onClick={() => handleAddIssueClick("To Do")}
-                                className="w-full flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Add Issue
-                            </button>
                         </div>
 
                         {/* In Progress Column */}
@@ -399,15 +380,6 @@ export default function Dashboard() {
                                     }
                                 )}
                             </div>
-                            <button
-                                onClick={() =>
-                                    handleAddIssueClick("In Progress")
-                                }
-                                className="w-full flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Add Issue
-                            </button>
                         </div>
 
                         {/* Review Column */}
@@ -454,13 +426,6 @@ export default function Dashboard() {
                                     );
                                 })}
                             </div>
-                            <button
-                                onClick={() => handleAddIssueClick("Review")}
-                                className="w-full flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Add Issue
-                            </button>
                         </div>
 
                         {/* Done Column */}
@@ -507,13 +472,6 @@ export default function Dashboard() {
                                     );
                                 })}
                             </div>
-                            <button
-                                onClick={() => handleAddIssueClick("Done")}
-                                className="w-full flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Add Issue
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -528,14 +486,6 @@ export default function Dashboard() {
                     </p>
                 </div>
             )}
-
-            {/* Add Issue Modal */}
-            <CreateIssue
-                isOpen={isAddIssueModalOpen}
-                onClose={() => setIsAddIssueModalOpen(false)}
-                onCreateIssue={handleCreateIssue}
-                column={selectedColumn}
-            />
 
             {/* Issue Overview Modal */}
             <IssueOverview

@@ -37,7 +37,7 @@ const DeleteIssueConfirmation = ({ isOpen, issue, onClose, onConfirm }) => {
                 <AlertTriangle size={24} />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Delete Task?
+                Delete Issue?
               </h3>
             </div>
             <button

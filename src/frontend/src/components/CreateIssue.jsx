@@ -19,7 +19,7 @@ const CreateIssue = ({
     type: "task",
     project: projectPropId || "",
     assignee: "",
-    start_due: "",
+    start_date: "",
     due_date: "",
     status: "todo",
   };
@@ -86,11 +86,24 @@ const CreateIssue = ({
       return;
     }
 
+    // Validate task has assignee
+    if (formData.type.toLowerCase() === "task" && !formData.assignee) {
+      setError("Tasks must be assigned to a member");
+      showToast.error("Tasks must be assigned to a member");
+      return;
+    }
+
     const payload = {
-      ...formData,
+      title: formData.title,
+      description: formData.description,
       priority: formData.priority.toLowerCase(),
       type: formData.type.toLowerCase(),
+      assignee: formData.assignee || null,
+      project: formData.project,
+      start_date: formData.start_date,
+      due_date: formData.due_date,
       sprint: selectedSprint || null,
+      // Don't send status - let backend decide based on sprint
     };
 
     if (formData.start_date && formData.due_date) {
@@ -210,19 +223,30 @@ const CreateIssue = ({
                 Sprint
               </label>
               <select
-                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 value={selectedSprint}
                 onChange={(e) => setSelectedSprint(e.target.value)}
+                disabled={formData.type.toLowerCase() === "bug"}
               >
-                <option value="">Select a Sprint</option>
-                {sprints
-                  .filter((s) => s.status !== "completed") // Don't allow adding to completed sprints
-                  .map((sprint) => (
-                    <option key={sprint._id} value={sprint._id}>
-                      {sprint.name} ({sprint.status})
-                    </option>
-                  ))}
+                <option value="">
+                  {formData.type.toLowerCase() === "bug"
+                    ? "Not Required"
+                    : "Select a Sprint"}
+                </option>
+                {formData.type.toLowerCase() === "task" &&
+                  sprints
+                    .filter((s) => s.status !== "completed") // Don't allow adding to completed sprints
+                    .map((sprint) => (
+                      <option key={sprint._id} value={sprint._id}>
+                        {sprint.name} ({sprint.status})
+                      </option>
+                    ))}
               </select>
+              {formData.type.toLowerCase() === "bug" && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Bugs don't require sprint assignment
+                </p>
+              )}
             </div>
           )}
 
@@ -230,27 +254,48 @@ const CreateIssue = ({
           <div>
             <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
               Assignee
+              {formData.type.toLowerCase() === "task" && (
+                <span className="text-red-500 ml-1">*</span>
+              )}
             </label>
             <select
-              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 bg-white dark:bg-slate-700 border rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                error &&
+                formData.type.toLowerCase() === "task" &&
+                !formData.assignee
+                  ? "border-red-500"
+                  : "border-slate-200 dark:border-slate-600"
+              }`}
               value={formData.assignee}
-              onChange={(e) =>
-                setFormData({ ...formData, assignee: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, assignee: e.target.value });
+                setError("");
+              }}
+              disabled={formData.type.toLowerCase() === "bug"}
             >
-              <option value="">Unassigned</option>
-              {members.map((member) => {
-                const realUserId =
-                  member.user?._id || member.user || member._id;
-                const realUsername = member.user?.username || member.username;
+              <option value="">
+                {formData.type.toLowerCase() === "bug"
+                  ? "Not Required"
+                  : "Select Assignee..."}
+              </option>
+              {formData.type.toLowerCase() === "task" &&
+                members.map((member) => {
+                  const realUserId =
+                    member.user?._id || member.user || member._id;
+                  const realUsername = member.user?.username || member.username;
 
-                return (
-                  <option key={realUserId} value={realUserId}>
-                    {realUsername}
-                  </option>
-                );
-              })}
+                  return (
+                    <option key={realUserId} value={realUserId}>
+                      {realUsername}
+                    </option>
+                  );
+                })}
             </select>
+            {formData.type.toLowerCase() === "bug" && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Bugs don't require assignment
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -277,9 +322,21 @@ const CreateIssue = ({
               <select
                 className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
-                }
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  const isBug = newType.toLowerCase() === "bug";
+                  setFormData({
+                    ...formData,
+                    type: newType,
+                    // Clear assignee when switching to Bug
+                    assignee: isBug ? "" : formData.assignee,
+                  });
+                  // Clear sprint when switching to Bug
+                  if (isBug) {
+                    setSelectedSprint("");
+                  }
+                  setError("");
+                }}
               >
                 <option value="Task">Task</option>
                 <option value="Bug">Bug</option>

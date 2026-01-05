@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
-function CreateSprint({ isOpen, onClose, onCreateSprint }) {
+function CreateSprint({ isOpen, onClose, onCreateSprint, initialData = null, isEditMode = false }) {
   const [formData, setFormData] = useState({
     name: "",
     createdDate: new Date().toISOString().split("T")[0],
@@ -11,6 +11,19 @@ function CreateSprint({ isOpen, onClose, onCreateSprint }) {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Update form data when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData && isEditMode) {
+      setFormData({
+        name: initialData.name || "",
+        createdDate: initialData.createdDate || new Date().toISOString().split("T")[0],
+        startDate: initialData.startDate || "",
+        dueDate: initialData.dueDate || "",
+        goals: initialData.goals || "",
+      });
+    }
+  }, [initialData, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,7 +93,7 @@ function CreateSprint({ isOpen, onClose, onCreateSprint }) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Create New Sprint
+            {isEditMode ? "Edit Sprint" : "Create New Sprint"}
           </h2>
           <button
             onClick={handleClose}
@@ -204,7 +217,7 @@ function CreateSprint({ isOpen, onClose, onCreateSprint }) {
               type="submit"
               className="px-4 py-2 bg-primary hover:bg-primary text-white rounded-lg font-medium transition"
             >
-              Create Sprint
+              {isEditMode ? "Update Sprint" : "Create Sprint"}
             </button>
           </div>
         </form>

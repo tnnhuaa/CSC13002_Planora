@@ -1,6 +1,7 @@
 import { projectRepository } from "../repositories/projectRepository.js";
 import { projectMembersRepository } from "../repositories/projectMembersRepository.js";
 import { issueRepository } from "../repositories/issueRepository.js";
+import { sprintRepository } from "../repositories/sprintRepository.js";
 import mongoose from "mongoose";
 import userRepository from "../repositories/userRepository.js";
 
@@ -118,6 +119,27 @@ class ProjectService {
       throw new Error("User is not a member of the project");
     }
 
+    // Prevent removing the last manager
+    const memberRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      userId
+    );
+
+    if (memberRole === "manager") {
+      const managerCount =
+        await projectMembersRepository.countMembersByRole(projectId, "manager");
+      if (managerCount <= 1) {
+        throw new Error(
+          "Cannot remove the last manager of the project. Please assign another manager first."
+        );
+      }
+    };
+
+    // Validate deleted user is the deleter
+    if (userId === requesterId) {
+      throw new Error("Managers cannot remove themselves from the project.");
+    };
+
     return await projectMembersRepository.removeMember(projectId, userId);
   }
 
@@ -144,6 +166,22 @@ class ProjectService {
     );
     if (!exists) {
       throw new Error("User is not a member of the project");
+    };
+
+    // Prevent demoting the last manager
+    const currentRole = await projectMembersRepository.getMemberRole(
+      projectId,
+      userId
+    );
+    
+    if (currentRole === "manager" && newRole !== "manager") {
+      const managerCount =
+        await projectMembersRepository.countMembersByRole(projectId, "manager");
+      if (managerCount <= 1) {
+        throw new Error(
+          "Cannot demote the last manager of the project. Please assign another manager first."
+        );
+      }
     }
 
     return await projectMembersRepository.updateMemberRole(
@@ -266,7 +304,7 @@ class ProjectService {
     );
 
     const managedProjects = projectMembers
-      .filter((pm) => pm.role === "manager")
+      .filter((pm) => pm.role === "manager" && pm.project)
       .map((pm) => pm.project);
 
     return managedProjects;
@@ -325,6 +363,12 @@ class ProjectService {
     const issues = await issueRepository.findByProjects(projectId);
     await Promise.all(
       issues.map(async (issue) => await issueRepository.delete(issue._id))
+    );
+
+    // Remove all sprints related to the project
+    const sprints = await sprintRepository.findByProject(projectId);
+    await Promise.all(
+      sprints.map(async (sprint) => await sprintRepository.delete(sprint._id))
     );
 
     return projectRepository.deleteProject(projectId);

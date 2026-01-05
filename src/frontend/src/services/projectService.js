@@ -21,20 +21,6 @@ export const projectService = {
     }
   },
 
-  async getProjectsManagedByUser(userId) {
-    return await projectRepository.findProjectsByManager(userId);
-  },
-  getProjectsByManager: async (managerId) => {
-    try {
-      const response = await axiosInstance.get(
-        `${BASE_URL}/manager/${managerId}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error.response ? error.response.data : error;
-    }
-  },
-
   getMyProjects: async () => {
     try {
       const response = await axiosInstance.get(`${BASE_URL}/mine`);
@@ -44,17 +30,18 @@ export const projectService = {
     }
   },
 
-  deleteProject: async (id) => {
+  getProjectDetails: async (id) => {
     try {
-      await axiosInstance.delete(`${BASE_URL}/${id}`);
+      const response = await axiosInstance.get(`${BASE_URL}/${id}`);
+      return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
   },
-  getProjectDetails: async (id) => {
+
+  getProjectMembers: async (projectId) => {
     try {
-      // Gọi API GET /api/projects/:id
-      const response = await axiosInstance.get(`${BASE_URL}/${id}`);
+      const response = await axiosInstance.get(`${BASE_URL}/${projectId}/members`);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
@@ -73,6 +60,30 @@ export const projectService = {
     }
   },
 
+  removeMemberFromProject: async (projectId, userId) => {
+    try {
+      const response = await axiosInstance.delete(
+        `${BASE_URL}/${projectId}/members`,
+        { data: { userId } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  changeMemberRole: async (projectId, userId, newRole) => {
+    try {
+      const response = await axiosInstance.put(
+        `${BASE_URL}/${projectId}/members/role`,
+        { userId, newRole }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   updateProject: async (projectId, projectData) => {
     try {
       const response = await axiosInstance.put(
@@ -84,6 +95,7 @@ export const projectService = {
       throw error.response ? error.response.data : error;
     }
   },
+
   deleteProject: async (projectId) => {
     try {
       await axiosInstance.delete(`${BASE_URL}/${projectId}`);

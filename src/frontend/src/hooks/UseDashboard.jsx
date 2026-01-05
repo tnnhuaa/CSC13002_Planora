@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { issueService } from "../services/issueService";
 import { showToast } from "../utils/toastUtils";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export const useDashboard = () => {
+    const { user } = useAuthStore();
     const [activeTab, setActiveTab] = useState("kanban");
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddIssueModalOpen, setIsAddIssueModalOpen] = useState(false);
@@ -67,17 +69,21 @@ export const useDashboard = () => {
                 Done: [],
             };
 
+            // Filter only issues assigned to current user
             data.forEach((issue) => {
-                const column = mapStatusToColumn(issue.status);
-                if (newIssues[column]) {
-                    newIssues[column].push({
-                        ...issue,
-                        issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
-                        // Đảm bảo các trường khác khớp
-                        dueDate: issue.dueDate
-                            ? new Date(issue.dueDate).toLocaleDateString()
-                            : "",
-                    });
+                // Check if issue is assigned to current user
+                if (issue.assignee?._id === user?._id) {
+                    const column = mapStatusToColumn(issue.status);
+                    if (newIssues[column]) {
+                        newIssues[column].push({
+                            ...issue,
+                            issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
+                            // Đảm bảo các trường khác khớp
+                            dueDate: issue.dueDate
+                                ? new Date(issue.dueDate).toLocaleDateString()
+                                : "",
+                        });
+                    }
                 }
             });
 
@@ -178,8 +184,10 @@ export const useDashboard = () => {
             await issueService.updateIssue(draggedIssue.issueId, {
                 status: mapColumnToStatus(targetColumn),
             });
+            showToast.success(`Issue moved to ${targetColumn} successfully`);
         } catch (error) {
             console.error("Error updating issue status:", error);
+            showToast.error("Failed to update issue status");
             // Nếu lỗi, nên revert lại UI (Optional: fetchIssues() lại)
             fetchIssues();
         }
