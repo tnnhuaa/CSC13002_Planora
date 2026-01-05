@@ -46,13 +46,17 @@ class IssueController {
         });
       }
 
-      // Determine initial status based on type and sprint
-      // Only tasks with sprint go to todo, everything else goes to backlog
-      let status;
-      if (issueType === "task" && sprint) {
-        status = "todo";
-      } else {
-        status = "backlog";
+      // Determine initial status
+      // If status is explicitly provided (e.g., from clicking + on a specific column), use it
+      // Otherwise, use logic: tasks with sprint go to todo, everything else goes to backlog
+      let status = req.body.status;
+      // console.error(status);
+      if (!status) {
+        if (issueType === "task" && sprint) {
+          status = "todo";
+        } else {
+          status = "backlog";
+        }
       }
 
       const issueData = {
