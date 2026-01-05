@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     LayoutGrid,
     List,
@@ -13,7 +13,8 @@ import {
     TrendingUp,
     Users2,
     ChartNoAxesGantt,
-    FolderKanban
+    FolderKanban,
+    ChevronDown,
 } from "lucide-react";
 import EditIssue from "../components/EditIssue";
 import IssueOverview from "../components/IssueOverview";
@@ -150,9 +151,37 @@ export default function Dashboard() {
         isIssueOverviewOpen,
         setIsIssueOverviewOpen,
         issueForOverview,
+        selectedProjects,
+        setSelectedProjects,
+        selectedSprints,
+        setSelectedSprints,
+        projects,
+        sprints,
     } = useDashboard();
 
     const filteredIssues = getFilteredIssues();
+
+    const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+    const [isSprintDropdownOpen, setIsSprintDropdownOpen] = useState(false);
+
+    const projectDropdownRef = useRef(null);
+    const sprintDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target)) {
+                setIsProjectDropdownOpen(false);
+            }
+            if (sprintDropdownRef.current && !sprintDropdownRef.current.contains(event.target)) {
+                setIsSprintDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Calculate statistics from issues
     const allIssues = [
@@ -270,17 +299,75 @@ export default function Dashboard() {
                                 placeholder="Search issues..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <FolderKanban size={16} />
-                            Project
-                        </button>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <ChartNoAxesGantt size={16} />
-                            Sprint
-                        </button>
+
+                        {/* Project Filter Dropdown */}
+                        <div className="relative" ref={projectDropdownRef}>
+                            <button
+                                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                            >
+                                <FolderKanban size={16} />
+                                Project ({selectedProjects.length})
+                                <ChevronDown size={14} className={`transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isProjectDropdownOpen && (
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
+                                    {projects.map((project) => (
+                                        <label key={project._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProjects.includes(project._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedProjects([...selectedProjects, project._id]);
+                                                    } else {
+                                                        setSelectedProjects(selectedProjects.filter(id => id !== project._id));
+                                                    }
+                                                }}
+                                                className="rounded"
+                                            />
+                                            <span className="text-sm text-slate-900 dark:text-white">{project.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sprint Filter Dropdown */}
+                        <div className="relative" ref={sprintDropdownRef}>
+                            <button
+                                onClick={() => setIsSprintDropdownOpen(!isSprintDropdownOpen)}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                            >
+                                <ChartNoAxesGantt size={16} />
+                                Sprint ({selectedSprints.length})
+                                <ChevronDown size={14} className={`transition-transform ${isSprintDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isSprintDropdownOpen && (
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
+                                    {sprints.map((sprint) => (
+                                        <label key={sprint._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSprints.includes(sprint._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedSprints([...selectedSprints, sprint._id]);
+                                                    } else {
+                                                        setSelectedSprints(selectedSprints.filter(id => id !== sprint._id));
+                                                    }
+                                                }}
+                                                className="rounded"
+                                            />
+                                            <span className="text-sm text-slate-900 dark:text-white">{sprint.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Kanban Board */}

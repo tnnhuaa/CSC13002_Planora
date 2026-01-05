@@ -116,7 +116,7 @@ function ProjectDetail() {
   const fetchSprints = async () => {
     try {
       const response = await sprintService.getSprintsByProject(projectId);
-      setSprintsData(response.data || []);
+      setSprintsData(response || []);
     } catch (error) {
       console.error("Failed to fetch sprints:", error);
       // Optional: showToast.error("Failed to load sprints");
@@ -165,7 +165,7 @@ function ProjectDetail() {
     try {
       setLoadingComments(true);
       const response = await commentService.getCommentsByIssue(issueId);
-      setComments(response.data || []);
+      setComments(response || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
       showToast.error("Failed to fetch comments");

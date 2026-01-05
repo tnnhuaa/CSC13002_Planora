@@ -4,6 +4,9 @@ import { protectedRoute, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Get all sprints
+router.get("/", protectedRoute, authorize("user"), sprintController.getAllSprints);
+
 // Get sprints by project
 router.get("/project/:projectId", protectedRoute, authorize("user"), sprintController.getSprintsByProject);
 

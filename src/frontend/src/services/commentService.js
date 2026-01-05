@@ -10,7 +10,7 @@ export const commentService = {
         issueId,
         message,
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
@@ -20,7 +20,7 @@ export const commentService = {
   getCommentsByIssue: async (issueId) => {
     try {
       const response = await axiosInstance.get(`${BASE_URL}/issue/${issueId}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
@@ -32,7 +32,7 @@ export const commentService = {
       const response = await axiosInstance.put(`${BASE_URL}/${commentId}`, {
         message,
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
@@ -42,7 +42,7 @@ export const commentService = {
   deleteComment: async (commentId) => {
     try {
       const response = await axiosInstance.delete(`${BASE_URL}/${commentId}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
