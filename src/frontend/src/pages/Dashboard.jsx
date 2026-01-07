@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     LayoutGrid,
     List,
@@ -130,7 +131,51 @@ const StatCard = ({ icon, title, value, trend, isPositive }) => {
     );
 };
 
+const ProjectCard = ({ project, onClick }) => {
+    // Progress comes from backend
+    const progress = project.progress || 0;
+
+    return (
+        <div
+            onClick={onClick}
+            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
+        >
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
+                        {project.name}
+                    </h3>
+                    {project.description && (
+                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                            {project.description}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Progress
+                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {Math.round(progress)}%
+                    </span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div
+                        className="bg-primary rounded-full h-2 transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function Dashboard() {
+    const navigate = useNavigate();
     const {
         activeTab,
         setActiveTab,
@@ -564,8 +609,30 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Placeholder for other tabs */}
-            {activeTab !== "kanban" && (
+            {/* Projects Tab */}
+            {activeTab === "projects" && (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {projects.map((project) => (
+                            <ProjectCard
+                                key={project._id}
+                                project={project}
+                                onClick={() => navigate(`/projects/${project._id}`)}
+                            />
+                        ))}
+                    </div>
+                    {projects.length === 0 && (
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
+                            <p className="text-slate-500 dark:text-slate-400">
+                                No projects found
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Other Views */}
+            {activeTab !== "kanban" && activeTab !== "projects" && (
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
                     <p className="text-slate-500 dark:text-slate-400">
                         {tabs.find((t) => t.id === activeTab)?.label} view
