@@ -62,8 +62,21 @@ class SprintService {
     return await sprintRepository.create({ project: projectId, name, goal, start_date, end_date, status: "planning" });
   }
 
-  async getAllSprints(filter = {}) {
-    return await sprintRepository.findAll(filter);
+  async getAllSprints(userId, filter = {}) {
+    // Get projects where user is manager
+    const managedProjects = await projectRepository.findProjectsByManager(userId);
+    const managedProjectIds = managedProjects.map(p => p._id);
+
+    // Get projects where user is member
+    const memberProjects = await projectMembersRepository.findProjectsByUser(userId);
+    const memberProjectIds = memberProjects.filter(pm => pm.project).map(pm => pm.project._id);
+
+    // Combine and deduplicate
+    const allProjectIds = [...new Set([...managedProjectIds, ...memberProjectIds])];
+
+    // Filter sprints by these projectIds
+    const sprintFilter = { ...filter, project: { $in: allProjectIds } };
+    return await sprintRepository.findAll(sprintFilter);
   }
 
   async getSprintById(sprintId, userId) {

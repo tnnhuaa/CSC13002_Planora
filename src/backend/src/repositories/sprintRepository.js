@@ -10,13 +10,6 @@ class SprintRepository {
   async findAll(filter = {}) {
     return await Sprint.find(filter)
       .populate("project", "name key")
-      .populate({
-        path: "issues",
-        populate: [
-          { path: "assignee", select: "username email avatarURL" },
-          { path: "reporter", select: "username email" },
-        ],
-      })
       .sort({ createdAt: -1 });
   }
 

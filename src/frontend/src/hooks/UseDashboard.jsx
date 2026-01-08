@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { issueService } from "../services/issueService";
+import { projectService } from "../services/projectService";
+import { sprintService } from "../services/sprintService";
 import { showToast } from "../utils/toastUtils";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export const useDashboard = () => {
+    const { user } = useAuthStore();
     const [activeTab, setActiveTab] = useState("kanban");
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddIssueModalOpen, setIsAddIssueModalOpen] = useState(false);
@@ -13,6 +17,12 @@ export const useDashboard = () => {
     const [issueToEdit, setIssueToEdit] = useState(null);
     const [isIssueOverviewOpen, setIsIssueOverviewOpen] = useState(false);
     const [issueForOverview, setIssueForOverview] = useState(null);
+
+    // Filter states
+    const [selectedProjects, setSelectedProjects] = useState([]);
+    const [selectedSprints, setSelectedSprints] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [sprints, setSprints] = useState([]);
 
     // Mock data for issues in each column
     const [issues, setIssues] = useState({
@@ -67,17 +77,24 @@ export const useDashboard = () => {
                 Done: [],
             };
 
+            // Filter only issues assigned to current user and selected sprints
             data.forEach((issue) => {
-                const column = mapStatusToColumn(issue.status);
-                if (newIssues[column]) {
-                    newIssues[column].push({
-                        ...issue,
-                        issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
-                        // Đảm bảo các trường khác khớp
-                        dueDate: issue.dueDate
-                            ? new Date(issue.dueDate).toLocaleDateString()
-                            : "",
-                    });
+                // Check if issue is assigned to current user
+                if (issue.assignee?._id === user?._id) {
+                    // Check if no sprint filter or issue belongs to selected sprints
+                    if (!selectedSprints.length || selectedSprints.includes(issue.sprint?._id)) {
+                        const column = mapStatusToColumn(issue.status);
+                        if (newIssues[column]) {
+                            newIssues[column].push({
+                                ...issue,
+                                issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
+                                // Đảm bảo các trường khác khớp
+                                dueDate: issue.dueDate
+                                    ? new Date(issue.dueDate).toLocaleDateString()
+                                    : "",
+                            });
+                        }
+                    }
                 }
             });
 
@@ -87,12 +104,39 @@ export const useDashboard = () => {
         }
     };
 
+    const fetchProjects = async () => {
+        try {
+            const data = await projectService.getMyProjects();
+            setProjects(data);
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
+
+    const fetchSprints = async () => {
+        try {
+            const data = await sprintService.getAllSprints();
+            setSprints(data);
+        } catch (error) {
+            console.error("Error fetching sprints:", error);
+        }
+    };
+
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            fetchIssues();
+            fetchProjects();
+            fetchSprints();
+        }
+    }, []);
+
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         if (token) {
             fetchIssues();
         }
-    }, []);
+    }, [selectedSprints]);
 
     const handleAddIssueClick = (column) => {
         setSelectedColumn(column);
@@ -196,29 +240,52 @@ export const useDashboard = () => {
     };
 
     const getFilteredIssues = () => {
-        if (!searchQuery.trim()) {
-            return issues;
+        let filtered = issues;
+
+        // Filter by selected projects
+        if (selectedProjects.length > 0) {
+            const projectFiltered = {};
+            Object.keys(filtered).forEach((column) => {
+                projectFiltered[column] = filtered[column].filter((issue) =>
+                    selectedProjects.includes(issue.project?._id)
+                );
+            });
+            filtered = projectFiltered;
         }
 
-        const query = searchQuery.toLowerCase();
-        const filteredIssues = {};
-
-        Object.keys(issues).forEach((column) => {
-            filteredIssues[column] = issues[column].filter((issue) => {
-                const titleMatch = issue.title.toLowerCase().includes(query);
-                const issueIdMatch = issue.issueId
-                    .toLowerCase()
-                    .includes(query);
-                const typeMatch = issue.type?.toLowerCase().includes(query);
-                const priorityMatch = issue.priority
-                    ?.toLowerCase()
-                    .includes(query);
-
-                return titleMatch || issueIdMatch || typeMatch || priorityMatch;
+        // Filter by selected sprints
+        if (selectedSprints.length > 0) {
+            const sprintFiltered = {};
+            Object.keys(filtered).forEach((column) => {
+                sprintFiltered[column] = filtered[column].filter((issue) =>
+                    issue.sprint && selectedSprints.includes(issue.sprint._id)
+                );
             });
-        });
+            filtered = sprintFiltered;
+        }
 
-        return filteredIssues;
+        // Filter by search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            const searchFiltered = {};
+            Object.keys(filtered).forEach((column) => {
+                searchFiltered[column] = filtered[column].filter((issue) => {
+                    const titleMatch = issue.title.toLowerCase().includes(query);
+                    const issueIdMatch = issue.issueId
+                        .toLowerCase()
+                        .includes(query);
+                    const typeMatch = issue.type?.toLowerCase().includes(query);
+                    const priorityMatch = issue.priority
+                        ?.toLowerCase()
+                        .includes(query);
+
+                    return titleMatch || issueIdMatch || typeMatch || priorityMatch;
+                });
+            });
+            filtered = searchFiltered;
+        }
+
+        return filtered;
     };
 
     const handleEditIssueClick = useCallback((issue) => {
@@ -279,5 +346,11 @@ export const useDashboard = () => {
         isIssueOverviewOpen,
         setIsIssueOverviewOpen,
         issueForOverview,
+        selectedProjects,
+        setSelectedProjects,
+        selectedSprints,
+        setSelectedSprints,
+        projects,
+        sprints,
     };
 };
