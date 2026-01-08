@@ -9,6 +9,9 @@ import {
   CheckSquare,
   Bookmark,
   User,
+  Folder,
+  Flag,
+  FileText,
 } from "lucide-react";
 import { issueService } from "../services/issueService";
 import { projectService } from "../services/projectService";
@@ -228,7 +231,7 @@ function Issues() {
               className="bg-slate-50 dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700"
             >
               <div className="flex justify-between items-start mb-3">
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
                       {issue.title}
@@ -243,9 +246,28 @@ function Issues() {
                       {issue.type}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {issue.description}
-                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-2 bg-white dark:bg-slate-100/30 p-2 rounded-md">
+                    <div className="flex gap-1 items-center">
+                      <Folder size={12} className="text-slate-400 flex-shrink-0" />
+                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        Project: {" "} {issue.project?.name || issue.project || "None"}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1 items-center">
+                      <Flag size={12} className="text-slate-400 flex-shrink-0" />
+                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        Sprint: {" "} {issue.sprint?.name || issue.sprint || "None"}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1 items-center">
+                      <FileText size={12} className="text-slate-400 flex-shrink-0" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        Description: {" "} {issue.description || "None"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 {/* <div className="flex gap-2">
                   <button
@@ -272,9 +294,6 @@ function Issues() {
                   )}`}
                 >
                   {issue.priority}
-                </span>
-                <span className="px-2 py-1 text-xs font-medium rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                  {issue.story_points} pts
                 </span>
               </div>
 
