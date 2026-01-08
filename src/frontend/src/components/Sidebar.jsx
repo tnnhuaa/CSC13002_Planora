@@ -14,6 +14,7 @@ import {
   Rocket,
   ChevronDown,
   LogOut,
+  StarIcon
 } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { generateAvatarColor, getAvatarInitial } from "../utils/avatarUtils";
@@ -100,7 +101,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
           {/* Group: Navigation */}
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
-              Navigation
+              Management
             </p>
             <div className="space-y-1">
               <NavItem
@@ -108,28 +109,33 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 icon={LayoutDashboard}
                 label="Dashboard"
               />
-              <NavItem to="/team" icon={Users} label="Team" />
+              <NavItem
+                to="/favourite"
+                icon={StarIcon}
+                label="Favorite"
+              />
+              
             </div>
           </div>
 
           {/* Group: Management */}
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
-              Management
+              Private
             </p>
             <div className="space-y-1">
-              <NavItem to="/users" icon={Users} label="Users" />
               <NavItem to="/projects" icon={Folder} label="Projects" />
-              <NavItem to="/backlog" icon={ListTodo} label="Backlog" />
-              <NavItem to="/sprints" icon={Calendar} label="Sprints" />
               <NavItem to="/issues" icon={CheckSquare} label="Issues" />
+              <NavItem to="/users" icon={Users} label="Users" />
+              {/* <NavItem to="/backlog" icon={ListTodo} label="Backlog" />
+              <NavItem to="/sprints" icon={Calendar} label="Sprints" />
               <NavItem to="/work_log" icon={Clock} label="Work Log" />
-              <NavItem to="/risks" icon={AlertTriangle} label="Risks" />
+              <NavItem to="/risks" icon={AlertTriangle} label="Risks" /> */}
             </div>
           </div>
 
           {/* Group: Collapsible (Favorites & Projects) */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <button className="flex items-center justify-between w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 px-2 text-sm font-medium">
               <span>Favorites</span>
               <ChevronRight size={16} />
@@ -138,7 +144,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
               <span>Projects</span>
               <ChevronRight size={16} />
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* 3. Footer: Profile & Settings (Sticky Bottom) */}

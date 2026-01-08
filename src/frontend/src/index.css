@@ -46,3 +46,7 @@
   color: #f1f5f9;
   opacity: 0.7;
 }
+
+button {
+  cursor: pointer;
+}
