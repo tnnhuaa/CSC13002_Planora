@@ -355,11 +355,11 @@ export default function Dashboard() {
                                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                             >
                                 <FolderKanban size={16} />
-                                Project ({selectedProjects.length})
+                                Project ({selectedProjects.length === 0 ? 'All' : selectedProjects.length})
                                 <ChevronDown size={14} className={`transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {isProjectDropdownOpen && (
-                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[150px] max-h-60 overflow-y-auto">
                                     {projects.map((project) => (
                                         <label key={project._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
                                             <input
@@ -388,11 +388,11 @@ export default function Dashboard() {
                                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                             >
                                 <ChartNoAxesGantt size={16} />
-                                Sprint ({selectedSprints.length})
+                                Sprint ({selectedProjects.length === 0 ? 'All' : selectedProjects.length})
                                 <ChevronDown size={14} className={`transition-transform ${isSprintDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {isSprintDropdownOpen && (
-                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[150px] max-h-60 overflow-y-auto">
                                     {sprints.map((sprint) => (
                                         <label key={sprint._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
                                             <input

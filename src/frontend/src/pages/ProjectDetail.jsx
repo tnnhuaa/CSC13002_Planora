@@ -82,6 +82,19 @@ function ProjectDetail() {
     getPriorityDisplay,
   } = UseTaskFilter(issues);
 
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [draggedFromColumn, setDraggedFromColumn] = useState(null);
+
+  const mapColumnToStatus = (columnName) => {
+    const mapping = {
+      "To Do": "todo",
+      "In Progress": "in_progress",
+      "Review": "in_review",
+      "Done": "done"
+    };
+    return mapping[columnName];
+  };
+
   const calculateDaysLeft = (dateString) => {
     if (!dateString) return null;
     const due = new Date(dateString);
@@ -401,6 +414,53 @@ function ProjectDetail() {
     fetchSprints();
   };
 
+  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
+const handleDragStart = (e, issue, column) => {
+    setDraggedIssue(issue);
+    setDraggedFromColumn(column);
+    e.dataTransfer.effectAllowed = "move";
+};
+
+  const handleDragOver = (e) => {
+      e.preventDefault(); 
+      e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, targetColumnName) => {
+      e.preventDefault();
+      const targetStatus = mapColumnToStatus(targetColumnName);
+
+      if (!draggedIssue || !draggedFromColumn || mapColumnToStatus(draggedFromColumn) === targetStatus) {
+          setDraggedIssue(null);
+          setDraggedFromColumn(null);
+          return;
+      }
+
+      const updatedIssues = issues.map(issue => 
+          issue._id === draggedIssue._id ? { ...issue, status: targetStatus } : issue
+      );
+      setIssues(updatedIssues);
+
+      try {
+          await issueService.updateIssue(draggedIssue._id, { status: targetStatus });
+          showToast.success(`Issue move to ${targetColumnName} successfully`);
+          await fetchProjectDetails(); 
+      } catch (error) {
+          console.error("Drop failed:", error);
+          showToast.error("Failed to update status");
+          fetchProjectDetails(); // Revert nếu lỗi
+      }
+
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+  };
+
+  const handleDragEnd = (e) => {
+      e.target.style.opacity = '1'; // Trả lại độ đậm nhạt
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+  };
+  
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
@@ -487,6 +547,8 @@ function ProjectDetail() {
   const isManager = project.members?.some(
     (member) => member.user?._id === user?._id && member.role === "manager"
   );
+
+  
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
@@ -869,7 +931,12 @@ function ProjectDetail() {
                   };
 
                   return (
-                    <div key={status} className="w-80 flex flex-col gap-3">
+                    <div 
+                      key={status} 
+                      className="w-80 flex flex-col gap-3"
+                      onDragOver={handleDragOver} 
+                      onDrop={(e) => handleDrop(e, status)} 
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-slate-900 dark:text-white text-sm">
                           {status}
@@ -889,8 +956,13 @@ function ProjectDetail() {
                           return (
                             <div
                               key={issue._id}
+                              draggable={true} 
+                              onDragStart={(e) => handleDragStart(e, issue, status)} 
+                              onDragEnd={handleDragEnd} 
                               onClick={() => handleIssueClick(issue)}
-                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
+                              className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-move ${
+                                draggedIssue?._id === issue._id ? "opacity-50 border-primary" : ""
+                              }`} 
                             >
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
