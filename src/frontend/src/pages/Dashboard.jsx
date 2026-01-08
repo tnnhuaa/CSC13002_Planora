@@ -134,6 +134,7 @@ const StatCard = ({ icon, title, value, trend, isPositive }) => {
 const ProjectCard = ({ project, onClick }) => {
     // Progress comes from backend
     const progress = project.progress || 0;
+    const role = project.role || "member";
 
     return (
         <div
@@ -144,12 +145,13 @@ const ProjectCard = ({ project, onClick }) => {
                 <div className="flex-1">
                     <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
                         {project.name}
+                        <span className="inline-block px-2 py-1 text-xs uppercase font-medium bg-blue-100 dark:bg-blue-500 text-blue-700 dark:text-white rounded ml-2">
+                            {role}
+                        </span>
                     </h3>
-                    {project.description && (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                            {project.description}
-                        </p>
-                    )}
+                    <p className={`text-sm text-slate-500 dark:text-slate-400 line-clamp-2 ${!project.description ? 'italic' : ''}`}>
+                        {project.description || "No description"}
+                    </p>
                 </div>
             </div>
 
@@ -160,7 +162,7 @@ const ProjectCard = ({ project, onClick }) => {
                         Progress
                     </span>
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        {Math.round(progress)}%
+                        {progress.toFixed(1)}%
                     </span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
