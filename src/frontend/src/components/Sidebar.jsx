@@ -109,12 +109,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 icon={LayoutDashboard}
                 label="Dashboard"
               />
-              <NavItem
-                to="/favourite"
-                icon={StarIcon}
-                label="Favorite"
-              />
-              
             </div>
           </div>
 
@@ -125,6 +119,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
             </p>
             <div className="space-y-1">
               <NavItem to="/projects" icon={Folder} label="Projects" />
+              <NavItem to="/favorites" icon={StarIcon} label="Favorites Projects" />
               <NavItem to="/issues" icon={CheckSquare} label="Issues" />
               <NavItem to="/users" icon={Users} label="Users" />
               {/* <NavItem to="/backlog" icon={ListTodo} label="Backlog" />

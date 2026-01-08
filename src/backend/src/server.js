@@ -7,6 +7,7 @@ import projectRoute from "./routes/projectRoute.js";
 import commentRoute from "./routes/commentRoute.js";
 import issueRoute from "./routes/issueRoute.js";
 import sprintRoute from "./routes/sprintRoute.js";
+import favoriteProjectRoute from "./routes/favoriteProjectRoute.js";
 import { protectedRoute } from "./middleware/authMiddleware.js";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -51,6 +52,9 @@ app.use("/api/sprints", sprintRoute);
 
 // Comment routes
 app.use("/api/comments", commentRoute);
+
+// Favorite project routes
+app.use("/api/favorites", favoriteProjectRoute);
 
 connectDB().then(() => {
   app.listen(PORT, () => {

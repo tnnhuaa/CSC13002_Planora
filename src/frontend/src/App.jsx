@@ -13,6 +13,7 @@ import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
 import Projects from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
+import FavoriteProjects from "./pages/FavoriteProjects";
 import Issues from "./pages/Issue";
 import UserManagement from "./pages/Admin/UserManagement";
 
@@ -83,6 +84,7 @@ function App() {
             />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route path="/favorites" element={<FavoriteProjects />} />
             <Route
               path="/backlog"
               element={

@@ -9,9 +9,11 @@ import {
   Trash2,
   Search,
   X,
+  Star,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
+import { favoriteProjectService } from "../services/favoriteProjectService";
 import { showToast } from "../utils/toastUtils";
 import { ClipLoader } from "react-spinners";
 
@@ -19,6 +21,7 @@ function Projects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [assignees, setAssignees] = useState([]);
+  const [favoriteProjects, setFavoriteProjects] = useState([]);
 
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -51,12 +54,15 @@ function Projects() {
     try {
       setLoading(true);
 
-      const [projectRes, assigneeRes, userRes] = await Promise.all([
+      const [projectRes, assigneeRes, userRes, favoritesRes] = await Promise.all([
         projectService.getMyProjects(),
         userService.getAssignee().catch((err) => {
           return { data: [] };
         }),
         userService.getCurrentUser(),
+        favoriteProjectService.getFavorites().catch((err) => {
+          return { data: [] };
+        }),
       ]);
 
       let projectList = [];
@@ -77,6 +83,9 @@ function Projects() {
       setAssignees(assigneeRes.data || []);
 
       setCurrentUser(userRes.user || userRes.data || userRes);
+
+      const favorites = favoritesRes.data || favoritesRes || [];
+      setFavoriteProjects(favorites.map(fav => fav.project?._id || fav.project).filter(Boolean));
     } catch (error) {
       console.error("Error when fetching projects:", error);
     } finally {
@@ -213,6 +222,25 @@ function Projects() {
     }
   };
 
+  const handleToggleFavorite = async (projectId, e) => {
+    e.stopPropagation();
+    try {
+      const isFavorite = favoriteProjects.includes(projectId);
+      if (isFavorite) {
+        await favoriteProjectService.removeFavorite(projectId);
+        setFavoriteProjects(prev => prev.filter(id => id !== projectId));
+        showToast.success("Removed from favorites");
+      } else {
+        await favoriteProjectService.addFavorite(projectId);
+        setFavoriteProjects(prev => [...prev, projectId]);
+        showToast.success("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      showToast.error("Failed to update favorite. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
@@ -308,28 +336,43 @@ function Projects() {
                     {project.description || <span className="italic">No description.</span>}
                   </p>
                 </div>
-                {isProjectManager(project) && (
-                  <div
-                    className="flex gap-2"
-                    onClick={(e) => e.stopPropagation()} // Chặn click để không vào trang detail
+                <div
+                  className="flex gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => handleToggleFavorite(project._id, e)}
+                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"
+                    title={favoriteProjects.includes(project._id) ? "Remove from favorites" : "Add to favorites"}
                   >
-                    <button 
-                      onClick={() => handleEditClick(project)}
-                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
-                    >
-                      <Edit2
-                        size={16}
-                        className="text-slate-600 dark:text-slate-400"
-                      />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(project._id)}
-                      className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                    >
-                      <Trash2 size={16} className="text-red-600" />
-                    </button>
-                  </div>
-                )}
+                    <Star
+                      size={16}
+                      className={favoriteProjects.includes(project._id) 
+                        ? "text-yellow-500 fill-yellow-500" 
+                        : "text-slate-600 dark:text-slate-400"
+                      }
+                    />
+                  </button>
+                  {isProjectManager(project) && (
+                    <>
+                      <button 
+                        onClick={() => handleEditClick(project)}
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+                      >
+                        <Edit2
+                          size={16}
+                          className="text-slate-600 dark:text-slate-400"
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(project._id)}
+                        className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      >
+                        <Trash2 size={16} className="text-red-600" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Progress Bar */}

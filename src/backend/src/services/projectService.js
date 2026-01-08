@@ -4,6 +4,7 @@ import { issueRepository } from "../repositories/issueRepository.js";
 import { sprintRepository } from "../repositories/sprintRepository.js";
 import mongoose from "mongoose";
 import userRepository from "../repositories/userRepository.js";
+import { favoriteProjectRepository } from "../repositories/favoriteProjectRepository.js";
 
 class ProjectService {
   async createProject(data, managerId) {
@@ -139,6 +140,27 @@ class ProjectService {
     if (userId === requesterId) {
       throw new Error("Managers cannot remove themselves from the project.");
     };
+
+    // All issues of the user go to backlog (unassigned)
+    const issues = await issueRepository.findByAssigneeIdAndProjects(
+      userId,
+      [projectId]
+    );
+    await Promise.all(
+      issues.map(async (issue) =>
+        issueRepository.updateIssue(issue._id, { assignee: null, sprint: null, status: "backlog" })
+      )
+    );
+    
+    // Delete favaorite projects of the user related to this project
+    const favoriteProjects = await favoriteProjectRepository.findByUser(userId);
+    await Promise.all(
+      favoriteProjects
+        .filter((fav) => String(fav.project._id) === String(projectId))
+        .map(async (fav) =>
+          favoriteProjectRepository.delete(userId, projectId)
+        )
+    );
 
     return await projectMembersRepository.removeMember(projectId, userId);
   }
@@ -369,6 +391,14 @@ class ProjectService {
     const sprints = await sprintRepository.findByProject(projectId);
     await Promise.all(
       sprints.map(async (sprint) => await sprintRepository.delete(sprint._id))
+    );
+
+    // Remove favorite projects related to this project
+    const favoriteProjects = await favoriteProjectRepository.findByProject(projectId);
+    await Promise.all(
+      favoriteProjects.map(async (fav) =>
+        favoriteProjectRepository.delete(fav.user, projectId)
+      )
     );
 
     return projectRepository.deleteProject(projectId);
