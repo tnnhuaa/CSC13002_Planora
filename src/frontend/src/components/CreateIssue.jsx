@@ -393,7 +393,7 @@ const CreateIssue = ({
             {/* Error Message Display Area */}
             {error && (
               <div className="col-span-2 text-sm text-red-500 mt-1 flex items-center gap-1">
-                <span>⚠️</span> {error}
+                <span></span> {error}
               </div>
             )}
           </div>
