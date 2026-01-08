@@ -21,6 +21,7 @@ import {
   Play,
   BarChart,
   ArrowLeft,
+  MessageSquare,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -41,6 +42,7 @@ import { sprintService } from "../services/sprintService";
 import SprintBoard from "../components/SprintBoard";
 import BacklogBoard from "../components/BacklogBoard";
 import { ClipLoader } from "react-spinners";
+import IssueDetailModal from "../components/IssueDetailModal";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -63,6 +65,7 @@ function ProjectDetail() {
   const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
   const [isDeleteIssueModalOpen, setIsDeleteIssueModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [isIssueDetailModalOpen, setIsIssueDetailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
   const [openMemberMenu, setOpenMemberMenu] = useState(null);
   const [sprintsData, setSprintsData] = useState([]);
@@ -165,6 +168,12 @@ function ProjectDetail() {
   };
 
   const handleIssueClick = async (issue) => {
+    setSelectedIssue(issue);
+    setIsIssueDetailModalOpen(true);
+  };
+
+  const handleViewComments = async (issue, e) => {
+    e.stopPropagation();
     setSelectedIssue(issue);
     await fetchComments(issue._id);
     // Scroll to comment section
@@ -971,6 +980,13 @@ const handleDragStart = (e, issue, column) => {
                                 </p>
                                 <div className="flex items-center gap-1">
                                   <button
+                                    onClick={(e) => handleViewComments(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition"
+                                    title="View comments"
+                                  >
+                                    <MessageSquare size={14} />
+                                  </button>
+                                  <button
                                     onClick={(e) => handleEditIssue(issue, e)}
                                     className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
                                     title="Edit issue"
@@ -1455,6 +1471,15 @@ const handleDragStart = (e, issue, column) => {
           setSelectedIssue(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Issue Detail Modal */}
+      <IssueDetailModal
+        isOpen={isIssueDetailModalOpen}
+        issue={selectedIssue}
+        onClose={() => {
+          setIsIssueDetailModalOpen(false);
+        }}
       />
     </div>
   );
