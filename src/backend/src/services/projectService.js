@@ -291,7 +291,7 @@ class ProjectService {
         const totalCount = issues.length;
         const progress = totalCount === 0 ? 0 : (doneCount / totalCount) * 100;
 
-        return { ...project.toObject(), members, progress };
+        return { ...project.toObject(), members, progress, role: pm.role };
       })
     );
 
