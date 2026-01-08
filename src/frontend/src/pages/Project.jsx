@@ -305,7 +305,7 @@ function Projects() {
                     </span>
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
-                    {project.description || <span className="italic">No description.</span>}
+                    {project.description || <span className="italic">No description</span>}
                   </p>
                 </div>
                 {isProjectManager(project) && (
