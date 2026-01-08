@@ -15,6 +15,7 @@ import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
 import { showToast } from "../utils/toastUtils";
 import CreateIssue from "../components/CreateIssue";
+import { ClipLoader } from "react-spinners";
 
 function Issues() {
   const [issues, setIssues] = useState([]);
@@ -209,7 +210,9 @@ function Issues() {
       {/* Issue List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {loading ? (
-          <div className="text-slate-500">Loading...</div>
+          <div className="col-span-full flex justify-center items-center py-8">
+            <ClipLoader color="#3b82f6" size={50} />
+          </div>
         ) : (
           issues
             .filter((issue) => {
