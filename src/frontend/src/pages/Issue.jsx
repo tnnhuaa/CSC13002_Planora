@@ -14,6 +14,7 @@ import { issueService } from "../services/issueService";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
 import { showToast } from "../utils/toastUtils";
+import CreateIssue from "../components/CreateIssue";
 
 function Issues() {
   const [issues, setIssues] = useState([]);
@@ -85,12 +86,22 @@ function Issues() {
 
       setProjects(projectRes.data || []);
 
+      const currentUserId = userRes.user?._id;
+      
+      // Filter issues assigned to current user
+      const myIssues = issueList.filter((issue) => {
+        const assigneeId = typeof issue.assignee === 'string' 
+          ? issue.assignee 
+          : issue.assignee?._id;
+        return assigneeId === currentUserId;
+      });
+
       setStats({
-        total: issueList.length,
-        todo: issueList.filter(
+        total: myIssues.length,
+        todo: myIssues.filter(
           (t) => t.status === "todo" || t.status === "in_progress"
         ).length,
-        done: issueList.filter((t) => t.status === "done").length,
+        done: myIssues.filter((t) => t.status === "done").length,
       });
 
       setCurrentUser(userRes.user);
@@ -105,34 +116,15 @@ function Issues() {
     fetchData();
   }, []);
 
-  // Submit Form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Handle create issue from modal
+  const handleCreateIssue = async (issueData) => {
     try {
-      // Validate
-      if (!formData.project) {
-        showToast.error("Please select a project");
-        return;
-      }
-
-      await issueService.createIssue(formData);
-
+      await issueService.createIssue(issueData);
+      showToast.success("Issue created successfully");
       setIsModalOpen(false);
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        status: "todo",
-        project: "",
-        priority: "medium",
-        type: "issue",
-        assignee: "",
-        due_date: "",
-        story_points: 0,
-      });
-
-      const res = await issueService.getIssues();
-      setIssues(res.data || []);
+      
+      // Refresh issues list
+      await fetchData();
     } catch (error) {
       console.error("Failed to create issue:", error);
       showToast.error(error.message || "Failed to create issue");
@@ -173,9 +165,7 @@ function Issues() {
               Manage your daily issues and bugs
             </p>
           </div>
-          {currentUser &&
-            (currentUser.role === "project manager" ||
-              currentUser.role === "admin") && (
+          {/* {currentUser && (
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
@@ -183,7 +173,7 @@ function Issues() {
                 <Plus size={20} />
                 Create Issue
               </button>
-            )}
+            )} */}
         </div>
       </div>
 
@@ -221,7 +211,15 @@ function Issues() {
         {loading ? (
           <div className="text-slate-500">Loading...</div>
         ) : (
-          issues.map((issue) => (
+          issues
+            .filter((issue) => {
+              // Only show issues assigned to current user
+              const assigneeId = typeof issue.assignee === 'string' 
+                ? issue.assignee 
+                : issue.assignee?._id;
+              return assigneeId === currentUser?._id;
+            })
+            .map((issue) => (
             <div
               key={issue._id}
               className="bg-slate-50 dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700"
@@ -246,14 +244,14 @@ function Issues() {
                     {issue.description}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <button
                     onClick={() => handleDelete(issue._id)}
                     className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-red-600"
                   >
                     <Trash2 size={16} />
                   </button>
-                </div>
+                </div> */}
               </div>
 
               {/* Badges */}
@@ -301,219 +299,13 @@ function Issues() {
       </div>
 
       {/* Create Issue Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                Create New Issue
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Row 1: Title & Type */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                    placeholder="Issue title"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                  >
-                    <option value="issue">Issue</option>
-                    <option value="bug">Bug</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Row 2: Description */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                  rows={3}
-                  placeholder="Issue details..."
-                />
-              </div>
-
-              {/* Row 3: Project & Assignee */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* PROJECT SELECT */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Project
-                  </label>
-                  <select
-                    value={formData.project}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        project: e.target.value,
-                        assignee: "",
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                    required
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map((p) => (
-                      <option key={p._id || p.id} value={p._id || p.id}>
-                        {p.title || p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ASSIGNEE SELECT (FILTERED) */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Assign To{" "}
-                    {formData.project &&
-                      `(${filteredAssignees.length} members)`}
-                  </label>
-                  <select
-                    value={formData.assignee}
-                    onChange={(e) =>
-                      setFormData({ ...formData, assignee: e.target.value })
-                    }
-                    disabled={!formData.project}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white disabled:bg-slate-100 disabled:dark:bg-slate-800 disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {!formData.project
-                        ? "Please select a project first"
-                        : "Select an Assignee"}
-                    </option>
-
-                    {/* Map filtered list */}
-                    {filteredAssignees.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.username} ({user.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Row 4: Status, Priority, Story Points */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="in_review">In Review</option>
-                    <option value="done">Done</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) =>
-                      setFormData({ ...formData, priority: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Story Points
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.story_points}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        story_points: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Row 5: Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, due_date: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-                >
-                  Create Issue
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateIssue
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateIssue={handleCreateIssue}
+        members={filteredAssignees}
+        sprints={[]}
+      />
     </div>
   );
 }
