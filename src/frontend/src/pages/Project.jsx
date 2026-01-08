@@ -13,6 +13,7 @@ import {
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
 import { showToast } from "../utils/toastUtils";
+import { ClipLoader } from "react-spinners";
 
 function Projects() {
   const navigate = useNavigate();
@@ -211,6 +212,14 @@ function Projects() {
       showToast.error("Failed to update project. Please try again.");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
+        <ClipLoader color="#3b82f6" size={50} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">

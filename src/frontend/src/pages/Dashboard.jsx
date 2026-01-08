@@ -281,9 +281,9 @@ export default function Dashboard() {
 
     const tabs = [
         { id: "kanban", label: "Kanban", icon: LayoutGrid },
-        { id: "list", label: "List", icon: List },
+        // { id: "list", label: "List", icon: List },
         { id: "projects", label: "Projects", icon: Folder },
-        { id: "components", label: "Components", icon: Grid3x3 },
+        // { id: "components", label: "Components", icon: Grid3x3 },
     ];
 
     return (

@@ -15,6 +15,7 @@ import EditUserModal from "../../components/admin/EditUserModal";
 import DeleteUserConfirmation from "../../components/admin/DeleteUserConfirmation";
 import BlockUserConfirmation from "../../components/admin/BlockUserConfirmation";
 import { useUserManagement } from "../../hooks/admin/useUserManagement";
+import { ClipLoader } from "react-spinners";
 
 const UserManagement = () => {
   const {
@@ -56,7 +57,7 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F3F5F9] dark:bg-[#0F172A] flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <ClipLoader color="#3b82f6" size={50} />
       </div>
     );
   }

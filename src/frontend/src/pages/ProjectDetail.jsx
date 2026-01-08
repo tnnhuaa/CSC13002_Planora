@@ -40,6 +40,7 @@ import { showToast } from "../utils/toastUtils";
 import { sprintService } from "../services/sprintService";
 import SprintBoard from "../components/SprintBoard";
 import BacklogBoard from "../components/BacklogBoard";
+import { ClipLoader } from "react-spinners";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -519,7 +520,7 @@ const handleDragStart = (e, issue, column) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-slate-800 dark:text-white">Loading...</div>
+        <ClipLoader color="#3b82f6" size={50} />
       </div>
     );
   }
@@ -1122,7 +1123,7 @@ const handleDragStart = (e, issue, column) => {
           {/* Comments List */}
           {loadingComments ? (
             <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-              Loading comments...
+              <ClipLoader color="#3b82f6" size={35} />
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-slate-500 dark:text-slate-400">
