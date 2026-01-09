@@ -14,7 +14,7 @@ import {
   Rocket,
   ChevronDown,
   LogOut,
-  StarIcon
+  StarIcon,
 } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { generateAvatarColor, getAvatarInitial } from "../utils/avatarUtils";
@@ -109,28 +109,34 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 icon={LayoutDashboard}
                 label="Dashboard"
               />
-              <NavItem
-                to="/favourite"
-                icon={StarIcon}
-                label="Favorite"
-              />
-              
+              {user?.role === "user" && (
+                <NavItem to="/favourite" icon={StarIcon} label="Favorite" />
+              )}
             </div>
           </div>
 
-          {/* Group: Management */}
+          {/* Group: Private - Role-based menu items */}
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
               Private
             </p>
             <div className="space-y-1">
-              <NavItem to="/projects" icon={Folder} label="Projects" />
-              <NavItem to="/issues" icon={CheckSquare} label="Issues" />
-              <NavItem to="/users" icon={Users} label="Users" />
-              {/* <NavItem to="/backlog" icon={ListTodo} label="Backlog" />
-              <NavItem to="/sprints" icon={Calendar} label="Sprints" />
-              <NavItem to="/work_log" icon={Clock} label="Work Log" />
-              <NavItem to="/risks" icon={AlertTriangle} label="Risks" /> */}
+              {/* Admin Only - User Management */}
+              {user?.role === "admin" && (
+                <NavItem to="/users" icon={Users} label="Users" />
+              )}
+
+              {/* User Only - Regular Pages */}
+              {user?.role === "user" && (
+                <>
+                  <NavItem to="/projects" icon={Folder} label="Projects" />
+                  <NavItem to="/issues" icon={CheckSquare} label="Issues" />
+                  {/* <NavItem to="/backlog" icon={ListTodo} label="Backlog" />
+                  <NavItem to="/sprints" icon={Calendar} label="Sprints" />
+                  <NavItem to="/work_log" icon={Clock} label="Work Log" />
+                  <NavItem to="/risks" icon={AlertTriangle} label="Risks" /> */}
+                </>
+              )}
             </div>
           </div>
 
