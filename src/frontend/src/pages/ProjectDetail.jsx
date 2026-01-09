@@ -171,7 +171,6 @@ function ProjectDetail() {
   const handleIssueClick = async (issue) => {
     setSelectedIssue(issue);
     setIsIssueDetailModalOpen(true);
-    setShowCommentSection(false); // Không hiện comment section khi mở modal
   };
 
   const handleViewComments = async (issue, e) => {
