@@ -110,7 +110,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 label="Dashboard"
               />
               {user?.role === "user" && (
-                <NavItem to="/favourite" icon={StarIcon} label="Favorite" />
+                <NavItem to="/favorites" icon={StarIcon} label="Favorite" />
               )}
             </div>
           </div>
@@ -131,7 +131,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 <>
                   <NavItem to="/projects" icon={Folder} label="Projects" />
                   <NavItem to="/issues" icon={CheckSquare} label="Issues" />
-                  <NavItem to="/favorites" icon={StarIcon} label="Favorites Projects" />
+                  {/* <NavItem to="/favorites" icon={StarIcon} label="Favorites Projects" /> */}
                   {/* <NavItem to="/backlog" icon={ListTodo} label="Backlog" />
                   <NavItem to="/sprints" icon={Calendar} label="Sprints" />
                   <NavItem to="/work_log" icon={Clock} label="Work Log" />
