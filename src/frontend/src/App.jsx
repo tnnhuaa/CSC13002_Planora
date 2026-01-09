@@ -14,6 +14,7 @@ import LoginConfirm from "./components/LoginConfirm";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Projects from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
+import FavoriteProjects from "./pages/FavoriteProjects";
 import Issues from "./pages/Issue";
 import UserManagement from "./pages/Admin/UserManagement";
 
@@ -106,6 +107,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["user"]}>
                     <ProjectDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <FavoriteProjects />
                   </ProtectedRoute>
                 }
               />
