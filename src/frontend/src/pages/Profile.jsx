@@ -4,6 +4,7 @@ import UseProfile from "../hooks/UseProfile";
 import ProfileHeader from "../components/Profile/ProfileHeader";
 import ProfileAvatar from "../components/Profile/ProfileAvatar";
 import ProfileInfoCard from "../components/Profile/ProfileInfoCard";
+import { ClipLoader } from "react-spinners";
 
 const Profile = () => {
     const { userData, isLoading, error, formatRole, formatDate } = UseProfile();
@@ -11,7 +12,7 @@ const Profile = () => {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-[#F3F5F9] dark:bg-[#0F172A] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <ClipLoader color="#3b82f6" size={50} />
             </div>
         );
     }

@@ -21,6 +21,7 @@ import {
   Play,
   BarChart,
   ArrowLeft,
+  MessageSquare,
 } from "lucide-react";
 import { projectService } from "../services/projectService";
 import { userService } from "../services/userService";
@@ -40,6 +41,8 @@ import { showToast } from "../utils/toastUtils";
 import { sprintService } from "../services/sprintService";
 import SprintBoard from "../components/SprintBoard";
 import BacklogBoard from "../components/BacklogBoard";
+import { ClipLoader } from "react-spinners";
+import IssueDetailModal from "../components/IssueDetailModal";
 
 function ProjectDetail() {
   const { projectId } = useParams();
@@ -62,6 +65,7 @@ function ProjectDetail() {
   const [isEditIssueModalOpen, setIsEditIssueModalOpen] = useState(false);
   const [isDeleteIssueModalOpen, setIsDeleteIssueModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [isIssueDetailModalOpen, setIsIssueDetailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
   const [openMemberMenu, setOpenMemberMenu] = useState(null);
   const [sprintsData, setSprintsData] = useState([]);
@@ -81,6 +85,19 @@ function ProjectDetail() {
     toggleSortOrder,
     getPriorityDisplay,
   } = UseTaskFilter(issues);
+
+  const [draggedIssue, setDraggedIssue] = useState(null);
+  const [draggedFromColumn, setDraggedFromColumn] = useState(null);
+
+  const mapColumnToStatus = (columnName) => {
+    const mapping = {
+      "To Do": "todo",
+      "In Progress": "in_progress",
+      "Review": "in_review",
+      "Done": "done"
+    };
+    return mapping[columnName];
+  };
 
   const calculateDaysLeft = (dateString) => {
     if (!dateString) return null;
@@ -116,7 +133,7 @@ function ProjectDetail() {
   const fetchSprints = async () => {
     try {
       const response = await sprintService.getSprintsByProject(projectId);
-      setSprintsData(response.data || []);
+      setSprintsData(response || []);
     } catch (error) {
       console.error("Failed to fetch sprints:", error);
       // Optional: showToast.error("Failed to load sprints");
@@ -152,6 +169,12 @@ function ProjectDetail() {
 
   const handleIssueClick = async (issue) => {
     setSelectedIssue(issue);
+    setIsIssueDetailModalOpen(true);
+  };
+
+  const handleViewComments = async (issue, e) => {
+    e.stopPropagation();
+    setSelectedIssue(issue);
     await fetchComments(issue._id);
     // Scroll to comment section
     setTimeout(() => {
@@ -165,7 +188,7 @@ function ProjectDetail() {
     try {
       setLoadingComments(true);
       const response = await commentService.getCommentsByIssue(issueId);
-      setComments(response.data || []);
+      setComments(response || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
       showToast.error("Failed to fetch comments");
@@ -224,8 +247,8 @@ function ProjectDetail() {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    return date.toLocaleDateString('vi-VN', options);
+    const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+    return date.toLocaleDateString("vi-VN", options);
   };
 
   // Format relative time for comments
@@ -337,7 +360,11 @@ function ProjectDetail() {
   };
 
   const handleRemoveMember = async (memberId, memberName) => {
-    if (!window.confirm(`Are you sure you want to remove ${memberName} from this project?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove ${memberName} from this project?`
+      )
+    ) {
       return;
     }
     try {
@@ -397,6 +424,53 @@ function ProjectDetail() {
     fetchSprints();
   };
 
+  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
+const handleDragStart = (e, issue, column) => {
+    setDraggedIssue(issue);
+    setDraggedFromColumn(column);
+    e.dataTransfer.effectAllowed = "move";
+};
+
+  const handleDragOver = (e) => {
+      e.preventDefault(); 
+      e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, targetColumnName) => {
+      e.preventDefault();
+      const targetStatus = mapColumnToStatus(targetColumnName);
+
+      if (!draggedIssue || !draggedFromColumn || mapColumnToStatus(draggedFromColumn) === targetStatus) {
+          setDraggedIssue(null);
+          setDraggedFromColumn(null);
+          return;
+      }
+
+      const updatedIssues = issues.map(issue => 
+          issue._id === draggedIssue._id ? { ...issue, status: targetStatus } : issue
+      );
+      setIssues(updatedIssues);
+
+      try {
+          await issueService.updateIssue(draggedIssue._id, { status: targetStatus });
+          showToast.success(`Issue move to ${targetColumnName} successfully`);
+          await fetchProjectDetails(); 
+      } catch (error) {
+          console.error("Drop failed:", error);
+          showToast.error("Failed to update status");
+          fetchProjectDetails(); // Revert nếu lỗi
+      }
+
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+  };
+
+  const handleDragEnd = (e) => {
+      e.target.style.opacity = '1'; // Trả lại độ đậm nhạt
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
+  };
+  
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status);
   };
@@ -455,7 +529,7 @@ function ProjectDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-slate-800 dark:text-white">Loading...</div>
+        <ClipLoader color="#3b82f6" size={50} />
       </div>
     );
   }
@@ -483,6 +557,8 @@ function ProjectDetail() {
   const isManager = project.members?.some(
     (member) => member.user?._id === user?._id && member.role === "manager"
   );
+
+  
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
@@ -594,7 +670,7 @@ function ProjectDetail() {
                   Overall Progress
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">
-                  {(project.progress).toFixed(1)}%
+                  {project.progress.toFixed(1)}%
                 </p>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
@@ -611,15 +687,17 @@ function ProjectDetail() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                 Active Sprint
               </p>
-              {sprintsData.map((sprint) => (
-                sprint.status === "active" && (
-                  <span
-                    key={sprint._id}
-                    className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-medium rounded-lg mr-2">
+              {sprintsData.map(
+                (sprint) =>
+                  sprint.status === "active" && (
+                    <span
+                      key={sprint._id}
+                      className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-medium rounded-lg mr-2"
+                    >
                       {sprint.name}
-                  </span>
-                )
-              ))}
+                    </span>
+                  )
+              )}
             </div>
           </div>
         </div>
@@ -646,9 +724,11 @@ function ProjectDetail() {
               {teamMembers.map((member) => {
                 const avatarColor = generateAvatarColor(member.user?.username);
                 // Get current user's role in project
-                const currentUserMember = teamMembers.find(m => m.user?._id === user?._id);
+                const currentUserMember = teamMembers.find(
+                  (m) => m.user?._id === user?._id
+                );
                 const currentUserRole = currentUserMember?.role;
-                
+
                 return (
                   <div
                     key={member.user?._id}
@@ -672,7 +752,7 @@ function ProjectDetail() {
                     >
                       {member.role || "Member"}
                     </span>
-                    
+
                     {/* Member actions menu - only show if user is manager and not own profile */}
                     {isManager && member.user?._id !== user?._id ? (
                       <div className="relative">
@@ -680,63 +760,77 @@ function ProjectDetail() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenMemberMenu(
-                              openMemberMenu === member.user?._id ? null : member.user?._id
+                              openMemberMenu === member.user?._id
+                                ? null
+                                : member.user?._id
                             );
                           }}
                           className="p-1 opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition"
                         >
-                          <MoreVertical size={14} className="text-slate-600 dark:text-slate-400" />
+                          <MoreVertical
+                            size={14}
+                            className="text-slate-600 dark:text-slate-400"
+                          />
                         </button>
 
-                      {openMemberMenu === member.user?._id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setOpenMemberMenu(null)}
-                          />
-                          <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[160px]">
-                            {/* Change Role submenu */}
-                            <div className="px-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                              Change Role
-                            </div>
-                            {["manager", "member", "viewer"].map((role) => (
+                        {openMemberMenu === member.user?._id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOpenMemberMenu(null)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-20 min-w-[160px]">
+                              {/* Change Role submenu */}
+                              <div className="px-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                Change Role
+                              </div>
+                              {["manager", "member", "viewer"].map((role) => (
+                                <button
+                                  key={role}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (role !== member.role) {
+                                      handleChangeMemberRole(
+                                        member.user?._id,
+                                        role
+                                      );
+                                    }
+                                  }}
+                                  disabled={role === member.role}
+                                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition ${
+                                    role === member.role
+                                      ? "text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                  }`}
+                                >
+                                  {role === member.role && (
+                                    <CheckCircle
+                                      size={14}
+                                      className="text-primary"
+                                    />
+                                  )}
+                                  <span className="capitalize">{role}</span>
+                                </button>
+                              ))}
+
+                              {/* Remove member button */}
                               <button
-                                key={role}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (role !== member.role) {
-                                    handleChangeMemberRole(member.user?._id, role);
-                                  }
+                                  handleRemoveMember(
+                                    member.user?._id,
+                                    member.user?.username
+                                  );
                                 }}
-                                disabled={role === member.role}
-                                className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition ${
-                                  role === member.role
-                                    ? "text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                                }`}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition border-t border-slate-200 dark:border-slate-700"
                               >
-                                {role === member.role && (
-                                  <CheckCircle size={14} className="text-primary" />
-                                )}
-                                <span className="capitalize">{role}</span>
+                                <Trash2 size={14} />
+                                Remove
                               </button>
-                            ))}
-                            
-                            {/* Remove member button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveMember(member.user?._id, member.user?.username);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition border-t border-slate-200 dark:border-slate-700"
-                            >
-                              <Trash2 size={14} />
-                              Remove
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     ) : (
                       // Placeholder to maintain consistent spacing
                       <div className="w-[20px]"></div>
@@ -826,28 +920,33 @@ function ProjectDetail() {
             <div className="overflow-x-auto">
               <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
                 {["To Do", "In Progress", "Review", "Done"].map((status) => {
-                  const statusIssues = getIssuesByStatus(
+                  const columnStatus =
                     status === "To Do"
                       ? "todo"
                       : status === "In Progress"
                       ? "in_progress"
                       : status === "Review"
                       ? "in_review"
-                      : "done"
-                  );
+                      : "done";
+                  const statusIssues = getIssuesByStatus(columnStatus);
 
                   const getStatusBgColor = (status) => {
                     const colors = {
                       "To Do": "bg-slate-200 dark:bg-slate-700",
                       "In Progress": "bg-sky-100 dark:bg-blue-900",
-                      "Review": "bg-indigo-100 dark:bg-indigo-800",
-                      "Done": "bg-emerald-100 dark:bg-emerald-800",
+                      Review: "bg-indigo-100 dark:bg-indigo-800",
+                      Done: "bg-emerald-100 dark:bg-emerald-800",
                     };
                     return colors[status] || "bg-gray-50 dark:bg-slate-700";
                   };
 
                   return (
-                    <div key={status} className="w-80 flex flex-col gap-3">
+                    <div 
+                      key={status} 
+                      className="w-80 flex flex-col gap-3"
+                      onDragOver={handleDragOver} 
+                      onDrop={(e) => handleDrop(e, status)} 
+                    >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-slate-900 dark:text-white text-sm">
                           {status}
@@ -856,21 +955,37 @@ function ProjectDetail() {
                           {statusIssues.length}
                         </span>
                       </div>
-                      <div className={`${getStatusBgColor(status)} rounded-lg p-3 min-h-[200px] space-y-2`}>
+                      <div
+                        className={`${getStatusBgColor(
+                          status
+                        )} rounded-lg p-3 min-h-[200px] space-y-2`}
+                      >
                         {statusIssues.map((issue) => {
                           const daysLeft = calculateDaysLeft(issue.due_date);
                           const issueOver = daysLeft !== null && daysLeft < 0;
                           return (
                             <div
                               key={issue._id}
+                              draggable={true} 
+                              onDragStart={(e) => handleDragStart(e, issue, status)} 
+                              onDragEnd={handleDragEnd} 
                               onClick={() => handleIssueClick(issue)}
-                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-pointer"
+                              className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-move ${
+                                draggedIssue?._id === issue._id ? "opacity-50 border-primary" : ""
+                              }`} 
                             >
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
                                   {issue.title}
                                 </p>
                                 <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={(e) => handleViewComments(issue, e)}
+                                    className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition"
+                                    title="View comments"
+                                  >
+                                    <MessageSquare size={14} />
+                                  </button>
                                   <button
                                     onClick={(e) => handleEditIssue(issue, e)}
                                     className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
@@ -935,7 +1050,10 @@ function ProjectDetail() {
                             </div>
                           );
                         })}
-                        <button className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition">
+                        <button
+                          onClick={() => handleOpenCreateModal(columnStatus)}
+                          className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition"
+                        >
                           <Plus size={16} className="mx-auto" />
                         </button>
                       </div>
@@ -1021,7 +1139,7 @@ function ProjectDetail() {
           {/* Comments List */}
           {loadingComments ? (
             <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-              Loading comments...
+              <ClipLoader color="#3b82f6" size={35} />
             </div>
           ) : comments.length === 0 ? (
             <div className="text-center py-8 text-slate-500 dark:text-slate-400">
@@ -1353,6 +1471,15 @@ function ProjectDetail() {
           setSelectedIssue(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Issue Detail Modal */}
+      <IssueDetailModal
+        isOpen={isIssueDetailModalOpen}
+        issue={selectedIssue}
+        onClose={() => {
+          setIsIssueDetailModalOpen(false);
+        }}
       />
     </div>
   );

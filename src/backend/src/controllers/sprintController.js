@@ -17,8 +17,9 @@ class SprintController {
 
   async getAllSprints(req, res, next) {
     try {
+      const userId = req.user._id || req.user.id;
       const filter = req.query;
-      const sprints = await sprintService.getAllSprints(filter);
+      const sprints = await sprintService.getAllSprints(userId, filter);
 
       return res.status(200).json({
         message: "Get all sprints successfully!",

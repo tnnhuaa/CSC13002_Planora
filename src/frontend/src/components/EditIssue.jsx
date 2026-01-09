@@ -287,7 +287,8 @@ const EditIssue = ({
                   assignee: newType === "bug" ? "" : prev.assignee
                 }));
               }}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+              disabled
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-sm text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

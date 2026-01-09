@@ -35,13 +35,16 @@ const CreateIssue = ({
 
   const mapColumnToStatus = (colName) => {
     if (!colName) return "todo";
-    if (colName === "backlog") return "backlog";
-    if (colName === "todo") return "todo";
+    // Direct mapping for status values
+    if (["backlog", "todo", "in_progress", "in_review", "done"].includes(colName)) {
+      return colName;
+    }
+    // Fallback mapping for display names
     const mapping = {
       "To Do": "todo",
       "In Progress": "in_progress",
-      Review: "review", // hoặc "in_review" tùy backend của bạn
-      Done: "done",
+      "Review": "in_review",
+      "Done": "done",
     };
     return mapping[colName] || "todo";
   };
@@ -103,7 +106,7 @@ const CreateIssue = ({
       start_date: formData.start_date,
       due_date: formData.due_date,
       sprint: selectedSprint || null,
-      // Don't send status - let backend decide based on sprint
+      status: formData.status, // Send the status from the column
     };
 
     if (formData.start_date && formData.due_date) {
@@ -390,7 +393,7 @@ const CreateIssue = ({
             {/* Error Message Display Area */}
             {error && (
               <div className="col-span-2 text-sm text-red-500 mt-1 flex items-center gap-1">
-                <span>⚠️</span> {error}
+                <span></span> {error}
               </div>
             )}
           </div>

@@ -21,7 +21,7 @@ function TaskFilterBar({
                 <Search size={16} className="text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Search tasks..."
+                    placeholder="Search issuses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="bg-transparent outline-none text-sm text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 flex-1"

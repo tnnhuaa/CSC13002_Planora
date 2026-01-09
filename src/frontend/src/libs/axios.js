@@ -51,7 +51,7 @@ axiosInstance.interceptors.response.use(
 
       // 2. Redirect to login (Respecting your Hash Router #)
       if (!window.location.hash.includes("signin")) {
-        window.location.href = "/#/signin";
+        window.location.href = `/#/signin`;
       }
     }
 

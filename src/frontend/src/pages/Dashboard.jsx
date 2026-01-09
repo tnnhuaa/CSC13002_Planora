@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     LayoutGrid,
     List,
@@ -13,7 +14,8 @@ import {
     TrendingUp,
     Users2,
     ChartNoAxesGantt,
-    FolderKanban
+    FolderKanban,
+    ChevronDown,
 } from "lucide-react";
 import EditIssue from "../components/EditIssue";
 import IssueOverview from "../components/IssueOverview";
@@ -129,7 +131,53 @@ const StatCard = ({ icon, title, value, trend, isPositive }) => {
     );
 };
 
+const ProjectCard = ({ project, onClick }) => {
+    // Progress comes from backend
+    const progress = project.progress || 0;
+    const role = project.role || "member";
+
+    return (
+        <div
+            onClick={onClick}
+            className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer"
+        >
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
+                        {project.name}
+                        <span className="inline-block px-2 py-1 text-xs uppercase font-medium bg-blue-100 dark:bg-blue-500 text-blue-700 dark:text-white rounded ml-2">
+                            {role}
+                        </span>
+                    </h3>
+                    <p className={`text-sm text-slate-500 dark:text-slate-400 line-clamp-2 ${!project.description ? 'italic' : ''}`}>
+                        {project.description || "No description"}
+                    </p>
+                </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Progress
+                    </span>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {progress.toFixed(1)}%
+                    </span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div
+                        className="bg-primary rounded-full h-2 transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function Dashboard() {
+    const navigate = useNavigate();
     const {
         activeTab,
         setActiveTab,
@@ -150,9 +198,37 @@ export default function Dashboard() {
         isIssueOverviewOpen,
         setIsIssueOverviewOpen,
         issueForOverview,
+        selectedProjects,
+        setSelectedProjects,
+        selectedSprints,
+        setSelectedSprints,
+        projects,
+        sprints,
     } = useDashboard();
 
     const filteredIssues = getFilteredIssues();
+
+    const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+    const [isSprintDropdownOpen, setIsSprintDropdownOpen] = useState(false);
+
+    const projectDropdownRef = useRef(null);
+    const sprintDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target)) {
+                setIsProjectDropdownOpen(false);
+            }
+            if (sprintDropdownRef.current && !sprintDropdownRef.current.contains(event.target)) {
+                setIsSprintDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Calculate statistics from issues
     const allIssues = [
@@ -207,9 +283,9 @@ export default function Dashboard() {
 
     const tabs = [
         { id: "kanban", label: "Kanban", icon: LayoutGrid },
-        { id: "list", label: "List", icon: List },
+        // { id: "list", label: "List", icon: List },
         { id: "projects", label: "Projects", icon: Folder },
-        { id: "components", label: "Components", icon: Grid3x3 },
+        // { id: "components", label: "Components", icon: Grid3x3 },
     ];
 
     return (
@@ -270,17 +346,75 @@ export default function Dashboard() {
                                 placeholder="Search issues..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <FolderKanban size={16} />
-                            Project
-                        </button>
-                        <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                            <ChartNoAxesGantt size={16} />
-                            Sprint
-                        </button>
+
+                        {/* Project Filter Dropdown */}
+                        <div className="relative" ref={projectDropdownRef}>
+                            <button
+                                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                            >
+                                <FolderKanban size={16} />
+                                Project ({selectedProjects.length === 0 ? 'All' : selectedProjects.length})
+                                <ChevronDown size={14} className={`transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isProjectDropdownOpen && (
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[150px] max-h-60 overflow-y-auto">
+                                    {projects.map((project) => (
+                                        <label key={project._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProjects.includes(project._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedProjects([...selectedProjects, project._id]);
+                                                    } else {
+                                                        setSelectedProjects(selectedProjects.filter(id => id !== project._id));
+                                                    }
+                                                }}
+                                                className="rounded"
+                                            />
+                                            <span className="text-sm text-slate-900 dark:text-white">{project.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sprint Filter Dropdown */}
+                        <div className="relative" ref={sprintDropdownRef}>
+                            <button
+                                onClick={() => setIsSprintDropdownOpen(!isSprintDropdownOpen)}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                            >
+                                <ChartNoAxesGantt size={16} />
+                                Sprint ({selectedProjects.length === 0 ? 'All' : selectedProjects.length})
+                                <ChevronDown size={14} className={`transition-transform ${isSprintDropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isSprintDropdownOpen && (
+                                <div className="absolute top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 min-w-[150px] max-h-60 overflow-y-auto">
+                                    {sprints.map((sprint) => (
+                                        <label key={sprint._id} className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSprints.includes(sprint._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedSprints([...selectedSprints, sprint._id]);
+                                                    } else {
+                                                        setSelectedSprints(selectedSprints.filter(id => id !== sprint._id));
+                                                    }
+                                                }}
+                                                className="rounded"
+                                            />
+                                            <span className="text-sm text-slate-900 dark:text-white">{sprint.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Kanban Board */}
@@ -477,8 +611,30 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Placeholder for other tabs */}
-            {activeTab !== "kanban" && (
+            {/* Projects Tab */}
+            {activeTab === "projects" && (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {projects.map((project) => (
+                            <ProjectCard
+                                key={project._id}
+                                project={project}
+                                onClick={() => navigate(`/projects/${project._id}`)}
+                            />
+                        ))}
+                    </div>
+                    {projects.length === 0 && (
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
+                            <p className="text-slate-500 dark:text-slate-400">
+                                No projects found
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Other Views */}
+            {activeTab !== "kanban" && activeTab !== "projects" && (
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
                     <p className="text-slate-500 dark:text-slate-400">
                         {tabs.find((t) => t.id === activeTab)?.label} view
