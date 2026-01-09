@@ -92,6 +92,17 @@ class IssueRepository {
       .sort({ createdAt: -1 });
   }
 
+  async findByAssigneeIdAndProjects(userId, projectIds) {
+    return await Issue.find({
+      assignee: userId,
+      project: { $in: projectIds },
+    })
+      .populate("assignee reporter", "username email avatarURL")
+      .populate("project", "name key")
+      .populate("sprint", "name")
+      .sort({ createdAt: -1 });
+  }
+
   async update(id, updateData) {
     return await Issue.findByIdAndUpdate(id, updateData, {
       new: true,
