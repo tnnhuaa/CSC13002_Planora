@@ -68,6 +68,7 @@ function ProjectDetail() {
   const [isIssueDetailModalOpen, setIsIssueDetailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("issues"); // New state for tab navigation
   const [openMemberMenu, setOpenMemberMenu] = useState(null);
+  const [showCommentSection, setShowCommentSection] = useState(false);
   const [sprintsData, setSprintsData] = useState([]);
   const [createIssueStatus, setCreateIssueStatus] = useState("todo");
   const {
@@ -170,11 +171,13 @@ function ProjectDetail() {
   const handleIssueClick = async (issue) => {
     setSelectedIssue(issue);
     setIsIssueDetailModalOpen(true);
+    setShowCommentSection(false); // Không hiện comment section khi mở modal
   };
 
   const handleViewComments = async (issue, e) => {
     e.stopPropagation();
     setSelectedIssue(issue);
+    setShowCommentSection(true); // Hiện comment section khi nhấn button
     await fetchComments(issue._id);
     // Scroll to comment section
     setTimeout(() => {
@@ -1098,8 +1101,8 @@ const handleDragStart = (e, issue, column) => {
         )}
       </div>
 
-      {/* Comment Section */}
-      {selectedIssue && (
+      {/* Comment Section*/}
+      {selectedIssue && showCommentSection && activeTab === "issues" && (
         <div
           id="comment-section"
           className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6"
@@ -1112,7 +1115,10 @@ const handleDragStart = (e, issue, column) => {
               </h3>
             </div>
             <button
-              onClick={() => setSelectedIssue(null)}
+              onClick={() => {
+                setSelectedIssue(null);
+                setShowCommentSection(false);
+              }}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer"
             >
               <X size={20} />
