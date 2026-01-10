@@ -426,12 +426,11 @@ function ProjectDetail() {
     fetchSprints();
   };
 
-  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
-const handleDragStart = (e, issue, column) => {
-    setDraggedIssue(issue);
-    setDraggedFromColumn(column);
-    e.dataTransfer.effectAllowed = "move";
-};
+  const handleDragStart = (e, issue, column) => {
+      setDraggedIssue(issue);
+      setDraggedFromColumn(column);
+      e.dataTransfer.effectAllowed = "move";
+  };
 
   const handleDragOver = (e) => {
       e.preventDefault(); 
@@ -460,7 +459,7 @@ const handleDragStart = (e, issue, column) => {
       } catch (error) {
           console.error("Drop failed:", error);
           showToast.error("Failed to update status");
-          fetchProjectDetails(); // Revert nếu lỗi
+          fetchProjectDetails(); // Revert
       }
 
       setDraggedIssue(null);
@@ -468,13 +467,14 @@ const handleDragStart = (e, issue, column) => {
   };
 
   const handleDragEnd = (e) => {
-      e.target.style.opacity = '1'; // Trả lại độ đậm nhạt
+      e.target.style.opacity = '1';
       setDraggedIssue(null);
       setDraggedFromColumn(null);
   };
   
   const getIssuesByStatus = (status) => {
-    return filteredAndSortedTasks.filter((issue) => issue.status === status);
+    return filteredAndSortedTasks.filter((issue) => issue.status === status && 
+      (!issue.sprint || issue.sprint.status !== "completed"));
   };
 
   const handleOpenCreateModal = (status) => {
@@ -559,8 +559,6 @@ const handleDragStart = (e, issue, column) => {
   const isManager = project.members?.some(
     (member) => member.user?._id === user?._id && member.role === "manager"
   );
-
-  
 
   return (
     <div className="p-6 bg-white dark:bg-slate-900 min-h-screen">
@@ -661,7 +659,7 @@ const handleDragStart = (e, issue, column) => {
                       : "text-slate-400 dark:text-slate-500 italic"
                   }`}
                 >
-                  Ongoing
+                  {project.progress < 100 ? "Ongoing" : "Completed"}
                 </p>
               </div>
             </div>
@@ -1291,6 +1289,7 @@ const handleDragStart = (e, issue, column) => {
         column={createIssueStatus}
         members={project?.members || []}
         sprints={sprintsData}
+        onSprintsUpdate={fetchSprints}
       />
 
       {/* ADD MEMBER MODAL */}

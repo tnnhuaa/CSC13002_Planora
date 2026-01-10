@@ -43,6 +43,7 @@ function SprintBoard({
     sprintId: null,
     stats: null,
     loading: false,
+    status: null,
   });
   const [draggedIssue, setDraggedIssue] = useState(null);
   const [dragOverSprint, setDragOverSprint] = useState(null);
@@ -148,14 +149,16 @@ function SprintBoard({
       sprintId,
       stats: null,
       loading: true,
+      status: null,
     });
     try {
       const response = await sprintService.getSprintStats(sprintId);
       setSprintStatsModal({
         isOpen: true,
         sprintId,
-        stats: response.data,
+        stats: response,
         loading: false,
+        status: response.status,
       });
     } catch (error) {
       console.error("Failed to fetch sprint stats:", error);
@@ -164,6 +167,7 @@ function SprintBoard({
         sprintId,
         stats: null,
         loading: false,
+        status: null,
       });
     }
   };
@@ -174,6 +178,7 @@ function SprintBoard({
       sprintId: null,
       stats: null,
       loading: false,
+      status: null,
     });
   };
 
@@ -314,7 +319,22 @@ function SprintBoard({
         status: targetSprintId ? issue.status : "backlog",
       };
 
-      await issueService.updateIssue(issue._id, updateData);
+      const statusTarget = targetSprintId ? (await sprintService.getSprintById(targetSprintId)).status : null;
+      if (statusTarget === "completed" || statusTarget === "cancelled") {
+        throw new Error("Cannot move issue to a completed or cancelled sprint.");
+      }
+
+      if (fromSprintId && targetSprintId) {
+        // Sprint to Sprint: remove from old, add to new
+        await sprintService.removeIssueFromSprint(fromSprintId, issue._id, true);
+        await sprintService.addIssueToSprint(targetSprintId, issue._id);
+      } else if (fromSprintId && !targetSprintId) {
+        // Sprint to Backlog: just remove from sprint
+        await sprintService.removeIssueFromSprint(fromSprintId, issue._id);
+      } else if (!fromSprintId && targetSprintId) {
+        // Backlog to Sprint: add to sprint
+        await sprintService.addIssueToSprint(targetSprintId, issue._id);
+      }
 
       // Refresh from backend to ensure consistency
       onSprintsUpdate();
@@ -326,8 +346,8 @@ function SprintBoard({
           : "Issue moved to backlog successfully"
       );
     } catch (error) {
-      console.error("Failed to move issue:", error);
-      showToast.error("Failed to move issue. Reverting changes...");
+      console.error("Failed to move issue:", error.message);
+      showToast.error("Failed to move issue: " + error.message);
 
       // REVERT: Restore backup state
       setLocalSprintsData(backupSprintsData);
@@ -812,7 +832,7 @@ function SprintBoard({
           <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-                Sprint Statistics
+                {sprintStatsModal.loading ? "Loading..." : sprintStatsModal.status !== "completed" ? "Sprint Statistics" : "Sprint Report"}
               </h3>
               <button
                 onClick={handleCloseStatsModal}

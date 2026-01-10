@@ -11,6 +11,7 @@ const CreateIssue = ({
   projectPropId,
   members = [],
   sprints = [],
+  onSprintsUpdate,
 }) => {
   const initialFormState = {
     title: "",
@@ -81,7 +82,7 @@ const CreateIssue = ({
     }
   }, [isOpen, projectPropId, column]);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setError("");
     if (!formData.title.trim()) return;
     if (!formData.project) {
@@ -116,8 +117,9 @@ const CreateIssue = ({
       }
     }
 
-    onCreateIssue(payload);
+    await onCreateIssue(payload);
     setFormData(initialFormState);
+    onSprintsUpdate();
   };
 
   const handleCancel = () => {

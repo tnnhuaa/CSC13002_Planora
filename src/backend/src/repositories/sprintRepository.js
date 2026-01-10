@@ -136,6 +136,7 @@ class SprintRepository {
       completedStoryPoints,
       completionRate:
         totalIssues > 0 ? (completedIssues / totalIssues) * 100 : 0,
+      status: sprint.status,
     };
   }
 }
