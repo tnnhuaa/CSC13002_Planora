@@ -137,8 +137,8 @@ const DonutChart = ({ data, total }) => {
     // Calculate angles for each segment
     let currentAngle = 0;
     const segments = data.map(item => {
-        const percentage = (item.value / total) * 100;
-        const angle = (item.value / total) * 360;
+        const percentage = total > 0 ? (item.value / total) * 100 : 0;
+        const angle = total > 0 ? (item.value / total) * 360 : 0;
         const segment = {
             ...item,
             percentage,
