@@ -37,15 +37,17 @@ const CreateIssue = ({
   const mapColumnToStatus = (colName) => {
     if (!colName) return "todo";
     // Direct mapping for status values
-    if (["backlog", "todo", "in_progress", "in_review", "done"].includes(colName)) {
+    if (
+      ["backlog", "todo", "in_progress", "in_review", "done"].includes(colName)
+    ) {
       return colName;
     }
     // Fallback mapping for display names
     const mapping = {
       "To Do": "todo",
       "In Progress": "in_progress",
-      "Review": "in_review",
-      "Done": "done",
+      Review: "in_review",
+      Done: "done",
     };
     return mapping[colName] || "todo";
   };
@@ -97,6 +99,8 @@ const CreateIssue = ({
       return;
     }
 
+    const finalStatus = selectedSprint ? formData.status : "backlog";
+
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -107,7 +111,7 @@ const CreateIssue = ({
       start_date: formData.start_date,
       due_date: formData.due_date,
       sprint: selectedSprint || null,
-      status: formData.status, // Send the status from the column
+      status: finalStatus, // Send the status from the column
     };
 
     if (formData.start_date && formData.due_date) {
