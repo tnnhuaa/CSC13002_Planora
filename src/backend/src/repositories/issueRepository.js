@@ -42,7 +42,7 @@ class IssueRepository {
     })
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
-      .populate("sprint", "name")
+      .populate("sprint", "name status")
       .sort({ listPosition: 1 }); // Sorted by custom order
   }
 
@@ -53,7 +53,7 @@ class IssueRepository {
     })
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
-      .populate("sprint", "name")
+      .populate("sprint", "name status")
       .sort({ listPosition: 1 });
   }
 
@@ -62,7 +62,7 @@ class IssueRepository {
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
       .populate("project", "name key")
-      .populate("sprint", "name");
+      .populate("sprint", "name status");
   }
 
   async findById(id) {
@@ -70,7 +70,7 @@ class IssueRepository {
       .populate("assignee", "username email avatarURL")
       .populate("reporter", "username email")
       .populate("project")
-      .populate("sprint", "name")
+      .populate("sprint", "name status")
       .populate({
         path: "comments",
         populate: { path: "user", select: "username avatarURL" },
@@ -81,14 +81,14 @@ class IssueRepository {
     return await Issue.find({ assignee: userId })
       .populate("assignee reporter", "username email avatarURL")
       .populate("project", "name key")
-      .populate("sprint", "name");
+      .populate("sprint", "name status");
   }
 
   async findByProjects(projectIds) {
     return await Issue.find({ project: { $in: projectIds } })
       .populate("assignee reporter", "username email avatarURL")
       .populate("project", "name key")
-      .populate("sprint", "name")
+      .populate("sprint", "name status")
       .sort({ createdAt: -1 });
   }
 
@@ -99,7 +99,7 @@ class IssueRepository {
     })
       .populate("assignee reporter", "username email avatarURL")
       .populate("project", "name key")
-      .populate("sprint", "name")
+      .populate("sprint", "name status")
       .sort({ createdAt: -1 });
   }
 

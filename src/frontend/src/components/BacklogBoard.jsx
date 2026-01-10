@@ -164,18 +164,18 @@ function BacklogBoard({
       setDraggedIssue(null);
       setDragOverSprint(null);
 
-      // Call appropriate API based on the move type
+      const statusTarget = targetSprintId ? (await sprintService.getSprintById(targetSprintId)).status : null;
+      if (statusTarget === "completed" || statusTarget === "cancelled") {
+        throw new Error("Cannot move issue to a completed or cancelled sprint.");
+      }
+
       if (fromSprintId && targetSprintId) {
         // Sprint to Sprint: remove from old, add to new
-        await sprintService.removeIssueFromSprint(fromSprintId, issue._id);
+        await sprintService.removeIssueFromSprint(fromSprintId, issue._id, true);
         await sprintService.addIssueToSprint(targetSprintId, issue._id);
       } else if (fromSprintId && !targetSprintId) {
         // Sprint to Backlog: just remove from sprint
         await sprintService.removeIssueFromSprint(fromSprintId, issue._id);
-        await issueService.updateIssue(issue._id, { 
-          sprint: null, 
-          status: "backlog" 
-        });
       } else if (!fromSprintId && targetSprintId) {
         // Backlog to Sprint: add to sprint
         await sprintService.addIssueToSprint(targetSprintId, issue._id);
@@ -192,7 +192,7 @@ function BacklogBoard({
       );
     } catch (error) {
       console.error("Failed to move issue:", error);
-      showToast.error("Failed to move issue. Reverting changes...");
+      showToast.error("Failed to move issue: " + error.message);
 
       // REVERT: Restore backup state
       setLocalSprintsData(backupSprintsData);

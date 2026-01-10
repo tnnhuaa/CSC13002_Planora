@@ -233,13 +233,15 @@ class SprintService {
     }
 
     // If issue is already in the sprint, do nothing
-    if (issue.sprint && issue.sprint.toString() === sprintId.toString()) {
+    const issueSprintId = issue.sprint?._id?.toString() || issue.sprint?.toString();
+
+    if (issueSprintId && issueSprintId === sprintId.toString()) {
         return sprint;
     }
 
     // If issue is already in another sprint, remove it first
-    if (issue.sprint) {
-      await sprintRepository.removeIssueFromSprint(issue.sprint, issueId);
+    if (issueSprintId) {
+      await sprintRepository.removeIssueFromSprint(issueSprintId, issueId);
     }
 
     // Update issue to reference sprint
@@ -248,7 +250,7 @@ class SprintService {
     return await sprintRepository.addIssueToSprint(sprintId, issueId);
   }
 
-  async removeIssueFromSprint(sprintId, issueId, userId) {
+  async removeIssueFromSprint(sprintId, issueId, userId, unchangedStatus) {
     const sprint = await sprintRepository.findById(sprintId);
     if (!sprint) {
       throw new Error("Sprint not found");
@@ -267,7 +269,7 @@ class SprintService {
     await this.checkSprintPermission(sprint.project._id, userId, "edit");
 
     // Update issue to remove sprint reference
-    await issueRepository.update(issueId, { $unset: { sprint: "" }, status: "backlog" });
+    if (!unchangedStatus) await issueRepository.update(issueId, { $unset: { sprint: "" }, status: "backlog" });
 
     return await sprintRepository.removeIssueFromSprint(sprintId, issueId);
   }
