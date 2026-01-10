@@ -1,8 +1,8 @@
 // src/App.jsx
 import React, { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Import trang
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -11,8 +11,10 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Layout from "./layouts/Layout";
 import LoginConfirm from "./components/LoginConfirm";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Projects from "./pages/Project";
 import ProjectDetail from "./pages/ProjectDetail";
+import FavoriteProjects from "./pages/FavoriteProjects";
 import Issues from "./pages/Issue";
 import UserManagement from "./pages/Admin/UserManagement";
 
@@ -50,96 +52,148 @@ function App() {
 
   return (
     <>
-    <HashRouter>
-      <Routes>
-        {/* Public */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+      <HashRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Private */}
-        <Route element={<LoginConfirm />}>
-          <Route element={<Layout />}>
-            {/* Default: Dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            {/* Dashboard */}
-            <Route path="/dashboard" element={<Dashboard />} />
+          {/* Private */}
+          <Route element={<LoginConfirm />}>
+            <Route element={<Layout />}>
+              {/* Default: Dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Dashboard */}
+              <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* Profile */}
-            <Route path="/profile" element={<Profile />} />
+              {/* Profile */}
+              <Route path="/profile" element={<Profile />} />
 
-            {/* TODO: Thiết kế xong chuyển element thành giống Dashboard */}
+              {/* TODO: Thiết kế xong chuyển element thành giống Dashboard */}
 
-            {/* Other pages */}
-            <Route
-              path="/team"
-              element={
-                <div className="text-slate-800 dark:text-white">Trang Team</div>
-              }
-            />
-            <Route
-              path="/users"
-              element={<UserManagement />}
-            />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:projectId" element={<ProjectDetail />} />
-            <Route
-              path="/backlog"
-              element={
-                <div className="text-slate-800 dark:text-white">
-                  Trang Backlog
-                </div>
-              }
-            />
-            <Route
-              path="/sprints"
-              element={
-                <div className="text-slate-800 dark:text-white">
-                  Trang Sprints
-                </div>
-              }
-            />
-            <Route path="/issues" element={<Issues />} />
-            <Route
-              path="/work_log"
-              element={
-                <div className="text-slate-800 dark:text-white">
-                  Trang Worklog
-                </div>
-              }
-            />
-            <Route
-              path="/risks"
-              element={
-                <div className="text-slate-800 dark:text-white">Trang Risk</div>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <div className="text-slate-800 dark:text-white">
-                  Trang settings
-                </div>
-              }
-            />
+              {/* Other pages */}
+              {/* Admin Only - User Management */}
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* User Only - Regular Pages (excluding admin) */}
+              <Route
+                path="/team"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang Team
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <Projects />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:projectId"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <ProjectDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <FavoriteProjects />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/backlog"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang Backlog
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sprints"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang Sprints
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/issues"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <Issues />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/work_log"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang Worklog
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/risks"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang Risk
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <div className="text-slate-800 dark:text-white">
+                      Trang settings
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </HashRouter>
-    <ToastContainer
-    position="top-right"
-    autoClose={3000}
-    hideProgressBar={false}
-    newestOnTop={false}
-    closeOnClick
-    rtl={false}
-    pauseOnFocusLoss
-    draggable
-    pauseOnHover
-    theme="colored"
-    progressClassName="toastProgress"
-  />
-  </>
+        </Routes>
+      </HashRouter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        progressClassName="toastProgress"
+      />
+    </>
   );
 }
 

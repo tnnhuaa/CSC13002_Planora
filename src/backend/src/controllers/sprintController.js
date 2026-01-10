@@ -147,7 +147,7 @@ class SprintController {
   async removeIssueFromSprint(req, res, next) {
     try {
       const { id } = req.params;
-      const { issueId } = req.body;
+      const { issueId, unchangedStatus } = req.body;
       const userId = req.user._id || req.user.id;
 
       if (!issueId) {
@@ -157,7 +157,8 @@ class SprintController {
       const sprint = await sprintService.removeIssueFromSprint(
         id,
         issueId,
-        userId
+        userId,
+        unchangedStatus || false
       );
 
       return res.status(200).json({
