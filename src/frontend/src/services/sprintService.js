@@ -18,11 +18,11 @@ export const sprintService = {
     return response.data.data;
   },
 
-  removeIssueFromSprint: async (sprintId, issueId) => {
+  removeIssueFromSprint: async (sprintId, issueId, unchangedStatus = false) => {
     const response = await axiosInstance.delete(
       `${BASE_URL}/${sprintId}/issues`,
       {
-        data: { issueId },
+        data: { issueId, unchangedStatus },
       }
     );
     return response.data.data;

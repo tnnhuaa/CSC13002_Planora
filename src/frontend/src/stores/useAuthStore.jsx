@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authService } from "../services/authService";
+import { userService } from "../services/userService";
 
 export const useAuthStore = create(
     persist(
@@ -149,11 +150,30 @@ export const useAuthStore = create(
                 }
             },
 
+            // Fetch current user data from backend
+            fetchUser: async () => {
+                try {
+                    const response = await userService.getCurrentUser();
+                    if (response.success && response.user) {
+                        set({ user: response.user });
+                        return { success: true, user: response.user };
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user data:", error);
+                    return { success: false };
+                }
+            },
+
             // Check if user is authenticated
-            checkAuth: () => {
+            checkAuth: async () => {
                 const token = localStorage.getItem("accessToken");
                 if (token) {
                     set({ isAuthenticated: true });
+                    // Fetch user data if authenticated
+                    const { user } = useAuthStore.getState();
+                    if (!user || !user.role) {
+                        await useAuthStore.getState().fetchUser();
+                    }
                 } else {
                     set({ isAuthenticated: false, user: null });
                 }

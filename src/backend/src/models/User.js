@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: true, // Set to true if you want to force it
+      required: false, // Made optional to handle existing users
       trim: true,
     },
     username: {

@@ -132,7 +132,14 @@ export const signIn = async (req, res) => {
     return res.status(200).json({
       message: `User ${user.username} logged in`,
       accessToken,
-      user: { _id: user._id, username: user.username },
+      user: { 
+        _id: user._id, 
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName,
+        avatarURL: user.avatarURL
+      },
     });
   } catch (error) {
     console.error("Error occurred when signing in", error);
@@ -304,7 +311,9 @@ export const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.hashedPassword = hashedPassword;
-    await user.save();
+    
+    // Only validate modified fields (password), not all fields
+    await user.save({ validateModifiedOnly: true });
 
     await OTP.cleanupOldOTPs(email);
     await Session.deleteMany({ userID: user._id });

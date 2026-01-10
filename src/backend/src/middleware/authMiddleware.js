@@ -6,7 +6,6 @@ export const protectedRoute = async (req, res, next) => {
     // Take token from headers
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
-
     // Verify token
     if (!token) {
       return res
