@@ -926,7 +926,7 @@ function ProjectDetail() {
 
             {/* Kanban Board */}
             <div className="overflow-x-auto">
-              <div className="grid grid-cols-4 gap-4 min-w-max pb-4">
+              <div className="grid grid-cols-4 gap-4 min-w-max pb-4 auto-rows-fr">
                 {["To Do", "In Progress", "Review", "Done"].map((status) => {
                   const columnStatus =
                     status === "To Do"
@@ -951,7 +951,7 @@ function ProjectDetail() {
                   return (
                     <div
                       key={status}
-                      className="w-80 flex flex-col gap-3"
+                      className="w-80 flex flex-col"
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, status)}
                     >
@@ -966,7 +966,7 @@ function ProjectDetail() {
                       <div
                         className={`${getStatusBgColor(
                           status
-                        )} rounded-lg p-3 min-h-[200px] space-y-2`}
+                        )} rounded-lg p-3 flex-1 min-h-[200px] flex flex-col gap-2`}
                       >
                         {statusIssues.map((issue) => {
                           const daysLeft = calculateDaysLeft(issue.due_date);
@@ -1066,7 +1066,7 @@ function ProjectDetail() {
                         })}
                         <button
                           onClick={() => handleOpenCreateModal(columnStatus)}
-                          className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition"
+                          className="w-full py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition mt-auto"
                         >
                           <Plus size={16} className="mx-auto" />
                         </button>
