@@ -426,11 +426,10 @@ function ProjectDetail() {
     fetchSprints();
   };
 
-  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
   const handleDragStart = (e, issue, column) => {
-    setDraggedIssue(issue);
-    setDraggedFromColumn(column);
-    e.dataTransfer.effectAllowed = "move";
+      setDraggedIssue(issue);
+      setDraggedFromColumn(column);
+      e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e) => {
@@ -476,13 +475,14 @@ function ProjectDetail() {
   };
 
   const handleDragEnd = (e) => {
-    e.target.style.opacity = "1"; // Trả lại độ đậm nhạt
-    setDraggedIssue(null);
-    setDraggedFromColumn(null);
+      e.target.style.opacity = '1';
+      setDraggedIssue(null);
+      setDraggedFromColumn(null);
   };
 
   const getIssuesByStatus = (status) => {
-    return filteredAndSortedTasks.filter((issue) => issue.status === status);
+    return filteredAndSortedTasks.filter((issue) => issue.status === status && 
+      (!issue.sprint || issue.sprint.status === "active"));
   };
 
   const handleOpenCreateModal = (status) => {
@@ -667,7 +667,7 @@ function ProjectDetail() {
                       : "text-slate-400 dark:text-slate-500 italic"
                   }`}
                 >
-                  Ongoing
+                  {project.progress < 100 ? "Ongoing" : "Completed"}
                 </p>
               </div>
             </div>
@@ -1092,6 +1092,7 @@ function ProjectDetail() {
             onIssueClick={handleIssueClick}
             formatDate={formatDate}
             calculateDaysLeft={calculateDaysLeft}
+            isManager={isManager}
           />
         )}
 
@@ -1303,6 +1304,7 @@ function ProjectDetail() {
         column={createIssueStatus}
         members={project?.members || []}
         sprints={sprintsData}
+        onSprintsUpdate={fetchSprints}
       />
 
       {/* ADD MEMBER MODAL */}

@@ -27,6 +27,7 @@ function SprintBoard({
   onIssueClick,
   formatDate,
   calculateDaysLeft,
+  isManager,
 }) {
   // Local state for optimistic updates
   const [localSprintsData, setLocalSprintsData] = useState(sprintsData);
@@ -427,7 +428,7 @@ function SprintBoard({
             </span>
           </p>
         </button>
-        {showActions && (
+        {showActions && isManager && (
           <div className="flex items-center gap-4">
             {/* Sprint Action Buttons */}
             <div className="flex items-center gap-2">
@@ -540,6 +541,18 @@ function SprintBoard({
             </div>
           </div>
         )}
+        {showActions && !isManager && sprint.status === "completed" && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewSprintStats(sprint._id);
+            }}
+            className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5"
+          >
+            <BarChart size={14} />
+            View Report
+          </button>
+        )}
       </div>
 
       {/* Sprint Issues */}
@@ -628,13 +641,15 @@ function SprintBoard({
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
           Sprint Management
         </h3>
-        <button
-          onClick={() => setIsCreateSprintModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
-        >
-          <Plus size={16} />
-          Create Sprint
-        </button>
+        {isManager && (
+          <button
+            onClick={() => setIsCreateSprintModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+          >
+            <Plus size={16} />
+            Create Sprint
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -647,13 +662,15 @@ function SprintBoard({
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
             Product Backlog
           </h3>
-          <button
-            onClick={() => setIsCreateSprintModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
-          >
-            <Plus size={16} />
-            Create Sprint
-          </button>
+          {isManager && (
+            <button
+              onClick={() => setIsCreateSprintModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary text-white text-sm font-medium rounded-lg transition"
+            >
+              <Plus size={16} />
+              Create Sprint
+            </button>
+          )}
         </div>
 
         {/* Backlog Issues Container */}
@@ -902,7 +919,7 @@ function SprintBoard({
                       Completion Rate
                     </p>
                     <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {sprintStatsModal.stats.completionRate || 0}%
+                      {sprintStatsModal.stats.completionRate.toFixed(1) || 0}%
                     </p>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2">
