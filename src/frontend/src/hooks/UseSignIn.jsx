@@ -15,7 +15,7 @@ const signInSchema = z.object({
 const UseSignIn = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const { signin, isLoading, error, clearError } = useAuthStore();
+  const { signin, isLoading, error, clearError, user } = useAuthStore();
 
   const {
     register,
@@ -31,7 +31,10 @@ const UseSignIn = () => {
     const result = await signin(data.account, data.password);
 
     if (result.success) {
-      navigate("/dashboard");
+      // Get user from Zustand store after signin completes
+      const currentUser = useAuthStore.getState().user;
+      const navigatePath = currentUser?.role === "admin" ? "/users" : "/dashboard";
+      navigate(navigatePath);
     }
   };
 

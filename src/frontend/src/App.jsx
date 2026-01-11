@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuthStore } from "./stores/useAuthStore";
 // Import trang
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -24,6 +25,13 @@ const COLOR_MAP = {
   Green: "#16a34a", // green-600
   Orange: "#f97316", // orange-500
   Pink: "#ec4899", // pink-500
+};
+
+// Component to handle default redirect based on user role
+const DefaultRedirect = () => {
+  const { user } = useAuthStore();
+  const redirectPath = user?.role === "admin" ? "/users" : "/dashboard";
+  return <Navigate to={redirectPath} replace />;
 };
 
 function App() {
@@ -63,7 +71,7 @@ function App() {
           <Route element={<LoginConfirm />}>
             <Route element={<Layout />}>
               {/* Default: Dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<DefaultRedirect />} />
               {/* Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
 

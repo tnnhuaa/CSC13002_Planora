@@ -9,8 +9,9 @@ const ProtectedRoute = ({ allowedRoles, children }) => {
   const hasAccess = user && allowedRoles.includes(user.role);
 
   if (!hasAccess) {
-    // Redirect to dashboard if not authorized
-    return <Navigate to="/dashboard" replace />;
+    // Redirect based on user role
+    const redirectPath = user?.role === "admin" ? "/users" : "/dashboard";
+    return <Navigate to={redirectPath} replace />;
   }
 
   return children;
