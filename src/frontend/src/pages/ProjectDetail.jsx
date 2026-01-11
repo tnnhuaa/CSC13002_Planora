@@ -337,6 +337,7 @@ function ProjectDetail() {
       setIsAddMemberModalOpen(false);
       setSelectedMembers([]);
       setSearchQuery("");
+      showToast.success("Add new member successfully!");
     } catch (error) {
       console.error("Failed to add members:", error);
       showToast.error("Failed to add members");
