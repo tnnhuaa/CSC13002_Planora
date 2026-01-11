@@ -426,18 +426,10 @@ function ProjectDetail() {
     fetchSprints();
   };
 
-<<<<<<< HEAD
   const handleDragStart = (e, issue, column) => {
       setDraggedIssue(issue);
       setDraggedFromColumn(column);
       e.dataTransfer.effectAllowed = "move";
-=======
-  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
-  const handleDragStart = (e, issue, column) => {
-    setDraggedIssue(issue);
-    setDraggedFromColumn(column);
-    e.dataTransfer.effectAllowed = "move";
->>>>>>> 0a14e85894f14dd18a5ea9982052131c2de80a22
   };
 
   const handleDragOver = (e) => {
@@ -446,34 +438,8 @@ function ProjectDetail() {
   };
 
   const handleDrop = async (e, targetColumnName) => {
-<<<<<<< HEAD
-      e.preventDefault();
-      const targetStatus = mapColumnToStatus(targetColumnName);
-
-      if (!draggedIssue || !draggedFromColumn || mapColumnToStatus(draggedFromColumn) === targetStatus) {
-          setDraggedIssue(null);
-          setDraggedFromColumn(null);
-          return;
-      }
-
-      const updatedIssues = issues.map(issue => 
-          issue._id === draggedIssue._id ? { ...issue, status: targetStatus } : issue
-      );
-      setIssues(updatedIssues);
-
-      try {
-          await issueService.updateIssue(draggedIssue._id, { status: targetStatus });
-          showToast.success(`Issue move to ${targetColumnName} successfully`);
-          await fetchProjectDetails(); 
-      } catch (error) {
-          console.error("Drop failed:", error);
-          showToast.error("Failed to update status");
-          fetchProjectDetails(); // Revert
-      }
-=======
     e.preventDefault();
     const targetStatus = mapColumnToStatus(targetColumnName);
->>>>>>> 0a14e85894f14dd18a5ea9982052131c2de80a22
 
     if (
       !draggedIssue ||
