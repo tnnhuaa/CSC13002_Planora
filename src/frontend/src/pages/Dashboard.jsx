@@ -151,6 +151,24 @@ const DonutChart = ({ data, total }) => {
 
     // Create SVG path for donut segment
     const createArc = (startAngle, angle, radius, innerRadius) => {
+        // Special case: if angle is 360 (full circle), draw two semicircles
+        if (angle >= 359.99) {
+            const y1 = 100 - radius;
+            const y2 = 100 + radius;
+            const y3 = 100 + innerRadius;
+            const y4 = 100 - innerRadius;
+            
+            return `
+                M 100 ${y1}
+                A ${radius} ${radius} 0 0 1 100 ${y2}
+                A ${radius} ${radius} 0 0 1 100 ${y1}
+                M 100 ${y4}
+                A ${innerRadius} ${innerRadius} 0 0 0 100 ${y3}
+                A ${innerRadius} ${innerRadius} 0 0 0 100 ${y4}
+                Z
+            `;
+        }
+        
         const startRad = (startAngle - 90) * Math.PI / 180;
         const endRad = (startAngle + angle - 90) * Math.PI / 180;
         

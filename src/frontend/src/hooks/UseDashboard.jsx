@@ -77,23 +77,20 @@ export const useDashboard = () => {
                 Done: [],
             };
 
-            // Filter only issues assigned to current user and selected sprints
+            // Filter only issues assigned to current user
             data.forEach((issue) => {
                 // Check if issue is assigned to current user
                 if (issue.assignee?._id === user?._id) {
-                    // Check if no sprint filter or issue belongs to selected sprints
-                    if (!selectedSprints.length || selectedSprints.includes(issue.sprint?._id)) {
-                        const column = mapStatusToColumn(issue.status);
-                        if (newIssues[column]) {
-                            newIssues[column].push({
-                                ...issue,
-                                issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
-                                // Đảm bảo các trường khác khớp
-                                dueDate: issue.dueDate
-                                    ? new Date(issue.dueDate).toLocaleDateString()
-                                    : "",
-                            });
-                        }
+                    const column = mapStatusToColumn(issue.status);
+                    if (newIssues[column]) {
+                        newIssues[column].push({
+                            ...issue,
+                            issueId: issue._id, // Map _id của Mongo sang issueId dùng ở Frontend
+                            // Đảm bảo các trường khác khớp
+                            dueDate: issue.dueDate
+                                ? new Date(issue.dueDate).toLocaleDateString()
+                                : "",
+                        });
                     }
                 }
             });
@@ -130,13 +127,6 @@ export const useDashboard = () => {
             fetchSprints();
         }
     }, []);
-
-    useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            fetchIssues();
-        }
-    }, [selectedSprints]);
 
     const handleAddIssueClick = (column) => {
         setSelectedColumn(column);
