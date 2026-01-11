@@ -482,7 +482,7 @@ function ProjectDetail() {
 
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status && 
-      (!issue.sprint || issue.sprint.status !== "completed"));
+      (!issue.sprint || issue.sprint.status === "active"));
   };
 
   const handleOpenCreateModal = (status) => {
@@ -1092,6 +1092,7 @@ function ProjectDetail() {
             onIssueClick={handleIssueClick}
             formatDate={formatDate}
             calculateDaysLeft={calculateDaysLeft}
+            isManager={isManager}
           />
         )}
 
