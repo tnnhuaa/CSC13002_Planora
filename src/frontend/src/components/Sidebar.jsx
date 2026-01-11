@@ -109,9 +109,6 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
                 icon={LayoutDashboard}
                 label="Dashboard"
               />
-              {user?.role === "user" && (
-                <NavItem to="/favorites" icon={StarIcon} label="Favorite" />
-              )}
             </div>
           </div>
 
@@ -129,6 +126,7 @@ const Sidebar = ({ isOpen, toggleSidebar, onOpenSettings }) => {
               {/* User Only - Regular Pages */}
               {user?.role === "user" && (
                 <>
+                  <NavItem to="/favorites" icon={StarIcon} label="Favorite" />
                   <NavItem to="/projects" icon={Folder} label="Projects" />
                   <NavItem to="/issues" icon={CheckSquare} label="Issues" />
                   {/* <NavItem to="/favorites" icon={StarIcon} label="Favorites Projects" /> */}

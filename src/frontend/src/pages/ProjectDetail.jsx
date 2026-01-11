@@ -94,8 +94,8 @@ function ProjectDetail() {
     const mapping = {
       "To Do": "todo",
       "In Progress": "in_progress",
-      "Review": "in_review",
-      "Done": "done"
+      Review: "in_review",
+      Done: "done",
     };
     return mapping[columnName];
   };
@@ -426,18 +426,27 @@ function ProjectDetail() {
     fetchSprints();
   };
 
+<<<<<<< HEAD
   const handleDragStart = (e, issue, column) => {
       setDraggedIssue(issue);
       setDraggedFromColumn(column);
       e.dataTransfer.effectAllowed = "move";
+=======
+  // Các hàm này bạn đã có, hãy kiểm tra lại xem có khớp không:
+  const handleDragStart = (e, issue, column) => {
+    setDraggedIssue(issue);
+    setDraggedFromColumn(column);
+    e.dataTransfer.effectAllowed = "move";
+>>>>>>> 0a14e85894f14dd18a5ea9982052131c2de80a22
   };
 
   const handleDragOver = (e) => {
-      e.preventDefault(); 
-      e.dataTransfer.dropEffect = "move";
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
   };
 
   const handleDrop = async (e, targetColumnName) => {
+<<<<<<< HEAD
       e.preventDefault();
       const targetStatus = mapColumnToStatus(targetColumnName);
 
@@ -461,9 +470,42 @@ function ProjectDetail() {
           showToast.error("Failed to update status");
           fetchProjectDetails(); // Revert
       }
+=======
+    e.preventDefault();
+    const targetStatus = mapColumnToStatus(targetColumnName);
+>>>>>>> 0a14e85894f14dd18a5ea9982052131c2de80a22
 
+    if (
+      !draggedIssue ||
+      !draggedFromColumn ||
+      mapColumnToStatus(draggedFromColumn) === targetStatus
+    ) {
       setDraggedIssue(null);
       setDraggedFromColumn(null);
+      return;
+    }
+
+    const updatedIssues = issues.map((issue) =>
+      issue._id === draggedIssue._id
+        ? { ...issue, status: targetStatus }
+        : issue
+    );
+    setIssues(updatedIssues);
+
+    try {
+      await issueService.updateIssue(draggedIssue._id, {
+        status: targetStatus,
+      });
+      showToast.success(`Issue move to ${targetColumnName} successfully`);
+      await fetchProjectDetails();
+    } catch (error) {
+      console.error("Drop failed:", error);
+      showToast.error("Failed to update status");
+      fetchProjectDetails(); // Revert nếu lỗi
+    }
+
+    setDraggedIssue(null);
+    setDraggedFromColumn(null);
   };
 
   const handleDragEnd = (e) => {
@@ -471,7 +513,7 @@ function ProjectDetail() {
       setDraggedIssue(null);
       setDraggedFromColumn(null);
   };
-  
+
   const getIssuesByStatus = (status) => {
     return filteredAndSortedTasks.filter((issue) => issue.status === status && 
       (!issue.sprint || issue.sprint.status !== "completed"));
@@ -941,11 +983,11 @@ function ProjectDetail() {
                   };
 
                   return (
-                    <div 
-                      key={status} 
+                    <div
+                      key={status}
                       className="w-80 flex flex-col gap-3"
-                      onDragOver={handleDragOver} 
-                      onDrop={(e) => handleDrop(e, status)} 
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, status)}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-slate-900 dark:text-white text-sm">
@@ -966,13 +1008,17 @@ function ProjectDetail() {
                           return (
                             <div
                               key={issue._id}
-                              draggable={true} 
-                              onDragStart={(e) => handleDragStart(e, issue, status)} 
-                              onDragEnd={handleDragEnd} 
+                              draggable={true}
+                              onDragStart={(e) =>
+                                handleDragStart(e, issue, status)
+                              }
+                              onDragEnd={handleDragEnd}
                               onClick={() => handleIssueClick(issue)}
                               className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:shadow-md transition cursor-move ${
-                                draggedIssue?._id === issue._id ? "opacity-50 border-primary" : ""
-                              }`} 
+                                draggedIssue?._id === issue._id
+                                  ? "opacity-50 border-primary"
+                                  : ""
+                              }`}
                             >
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <p className="text-sm font-medium text-slate-900 dark:text-white mb-3 line-clamp-2">
@@ -980,7 +1026,9 @@ function ProjectDetail() {
                                 </p>
                                 <div className="flex items-center gap-1">
                                   <button
-                                    onClick={(e) => handleViewComments(issue, e)}
+                                    onClick={(e) =>
+                                      handleViewComments(issue, e)
+                                    }
                                     className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition"
                                     title="View comments"
                                   >
