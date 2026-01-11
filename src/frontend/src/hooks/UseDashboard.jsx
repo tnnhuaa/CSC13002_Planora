@@ -77,10 +77,11 @@ export const useDashboard = () => {
                 Done: [],
             };
 
-            // Filter only issues assigned to current user
+            // Filter only issues assigned to current user and in active sprint
             data.forEach((issue) => {
-                // Check if issue is assigned to current user
-                if (issue.assignee?._id === user?._id) {
+                // Check if issue is assigned to current user and has active sprint
+                if (issue.assignee?._id === user?._id && 
+                    issue.sprint?.status === "active") {
                     const column = mapStatusToColumn(issue.status);
                     if (newIssues[column]) {
                         newIssues[column].push({
@@ -113,7 +114,8 @@ export const useDashboard = () => {
     const fetchSprints = async () => {
         try {
             const data = await sprintService.getAllSprints();
-            setSprints(data);
+            const activeSprints = data.filter(sprint => sprint.status === "active");
+            setSprints(activeSprints);
         } catch (error) {
             console.error("Error fetching sprints:", error);
         }
