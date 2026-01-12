@@ -16,6 +16,7 @@ import { userService } from "../services/userService";
 import { favoriteProjectService } from "../services/favoriteProjectService";
 import { showToast } from "../utils/toastUtils";
 import { ClipLoader } from "react-spinners";
+import { useAuthStore } from "../stores/useAuthStore";
 
 function Projects() {
   const navigate = useNavigate();
@@ -32,6 +33,8 @@ function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { user } = useAuthStore();
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -43,11 +46,9 @@ function Projects() {
     description: "",
   });
 
-  const isProjectManager = (project) => {
-    if (!currentUser || !project || !project.manager) return false;
-    const managerId = project.manager._id || project.manager;
-    return managerId.toString() === currentUser._id.toString();
-  };
+  const isProjectManager = (project) => (
+    project.members?.some((member) => member.user?._id === user?._id && member.role === "manager")
+  );
 
   // Fetch data
   const fetchProjects = async () => {
